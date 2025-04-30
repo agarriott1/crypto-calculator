@@ -4,97 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoonBag | Crypto Calculator</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Add modern font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Add icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00fff2',
+                        secondary: '#00ff88',
+                        dark: '#0a0a0f',
+                        card: '#1a1a24',
+                        input: '#2d2d3d',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-chart-line"></i> MoonBag</h1>
-            <p class="subtitle">Know your numbers: Calculate what it really takes to moon</p>
+<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans">
+    <!-- Starry Background -->
+    <div class="stars fixed inset-0 pointer-events-none" id="stars"></div>
+
+    <div class="relative z-10 container max-w-4xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-primary mb-2 drop-shadow-[0_0_10px_rgba(0,255,242,0.3)]">
+                MoonBag
+            </h1>
+            <p class="text-gray-400 text-lg">Know your numbers: Calculate what it really takes to moon</p>
         </header>
 
-        <div class="calculator-card">
-            <div class="input-group">
-                <label>Initial Investment ($)</label>
-                <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal" pattern="[0-9,]*">
-            </div>
+        <!-- Multi-step Container -->
+        <div class="space-y-8">
+            <!-- Step 1: Crypto Selection -->
+            <section id="step-1" class="fade-in">
+                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 1: Choose your coin</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="crypto-grid">
+                    <!-- Crypto cards will be inserted here -->
+                </div>
+            </section>
 
-            <div class="input-group">
-                <label>Select Cryptocurrency</label>
-                <select id="crypto">
-                    <option value="bitcoin">Bitcoin (BTC)</option>
-                    <option value="ethereum">Ethereum (ETH)</option>
-                    <option value="dogecoin">Dogecoin (DOGE)</option>
-                    <option value="solana">Solana (SOL)</option>
-                </select>
-            </div>
+            <!-- Step 2: Calculation Method -->
+            <section id="step-2" class="hidden fade-in">
+                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 2: Select calculation method</h2>
+                <div class="bg-card/50 backdrop-blur-xl rounded-xl p-1">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <button class="method-btn active" data-mode="profit">
+                            <span class="text-lg font-medium">Profit Target</span>
+                            <span class="text-sm text-gray-400">Calculate required price for profit goal</span>
+                        </button>
+                        <button class="method-btn" data-mode="price">
+                            <span class="text-lg font-medium">Price Target</span>
+                            <span class="text-sm text-gray-400">Find profit at target price</span>
+                        </button>
+                        <button class="method-btn" data-mode="holdings">
+                            <span class="text-lg font-medium">Holdings Target</span>
+                            <span class="text-sm text-gray-400">Calculate required position size</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
 
-            <div class="toggle-container">
-                <button class="toggle-btn active" data-mode="profit">Profit Target</button>
-                <button class="toggle-btn" data-mode="price">Price Target</button>
-                <button class="toggle-btn" data-mode="holdings">Holdings Target</button>
-            </div>
+            <!-- Step 3: Calculator -->
+            <section id="step-3" class="hidden fade-in">
+                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 3: Enter your numbers</h2>
+                <div class="bg-card/80 backdrop-blur-xl rounded-xl p-6 shadow-lg border border-white/10">
+                    <!-- Investment Input -->
+                    <div class="mb-6">
+                        <label class="text-sm uppercase text-gray-400 mb-1 block">Initial Investment ($)</label>
+                        <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal"
+                               class="w-full px-4 py-3 rounded-lg bg-input/50 border border-input text-white 
+                                      focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"/>
+                    </div>
 
-            <div id="profit-inputs" class="input-section">
-                <div class="input-group">
-                    <label>Target Profit ($)</label>
-                    <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal" pattern="[0-9,]*">
-                </div>
-                <div class="input-group">
-                    <label>Required Return (%)</label>
-                    <input type="number" id="return-percentage" readonly>
-                </div>
-            </div>
+                    <!-- Dynamic Input Sections -->
+                    <div id="profit-inputs" class="space-y-6">
+                        <!-- Profit target inputs -->
+                    </div>
+                    <div id="price-inputs" class="hidden space-y-6">
+                        <!-- Price target inputs -->
+                    </div>
+                    <div id="holdings-inputs" class="hidden space-y-6">
+                        <!-- Holdings target inputs -->
+                    </div>
 
-            <div id="price-inputs" class="input-section hidden">
-                <div class="input-group">
-                    <label>Target Price ($)</label>
-                    <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal" pattern="[0-9,]*">
+                    <!-- Calculate Button -->
+                    <button id="calculate-btn" 
+                            class="w-full mt-6 px-6 py-4 bg-primary text-dark font-semibold rounded-lg
+                                   hover:bg-primary/90 transform hover:-translate-y-0.5 transition-all
+                                   focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        Calculate Results
+                    </button>
                 </div>
-                <div class="input-group">
-                    <label>Current Price ($)</label>
-                    <input type="number" id="current-price" readonly>
-                </div>
-            </div>
+            </section>
 
-            <div id="holdings-inputs" class="input-section hidden">
-                <div class="input-group">
-                    <label>Target Balance ($)</label>
-                    <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal" pattern="[0-9,]*">
+            <!-- Results Section -->
+            <section id="results" class="hidden fade-in">
+                <h2 class="text-xl font-semibold mb-4 text-primary/80">Your Results</h2>
+                <div class="bg-card/80 backdrop-blur-xl rounded-xl p-6 shadow-lg border border-white/10 space-y-4">
+                    <!-- Results content -->
                 </div>
-                <div class="input-group">
-                    <label>Current Price ($)</label>
-                    <input type="number" id="holdings-current-price" readonly>
-                </div>
-            </div>
-
-            <button id="calculate-btn" class="calculate-btn">Calculate <i class="fas fa-calculator"></i></button>
-
-            <div class="result" id="result">
-                <div class="current-price">
-                    <span>Current Price:</span>
-                    <span id="live-price">Loading...</span>
-                </div>
-                <div class="required-price hidden">
-                    <span>Required Price:</span>
-                    <span id="required-price">-</span>
-                </div>
-                <div class="return-needed hidden">
-                    <span>Return Needed:</span>
-                    <span id="return-needed">-</span>
-                </div>
-                <div class="required-holdings hidden">
-                    <span>Required Holdings:</span>
-                    <span id="required-holdings">-</span>
-                </div>
-            </div>
+            </section>
         </div>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>

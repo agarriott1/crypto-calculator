@@ -168,30 +168,42 @@ input:focus, select:focus, .crypto-search:focus {
 .crypto-option {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
+    padding: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
 }
 
 .crypto-option:hover {
-    background: var(--input-bg);
+    background: rgba(0, 255, 242, 0.1);
 }
 
-.crypto-icon {
-    width: 28px;
-    height: 28px;
-    margin-right: 12px;
+.crypto-option:last-child {
+    border-bottom: none;
+}
+
+.crypto-option img {
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
+    margin-right: 12px;
 }
 
-.crypto-name {
-    font-weight: 500;
-    margin-bottom: 4px;
+#crypto-options {
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--input-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
 }
 
-.crypto-details {
-    font-size: 0.85rem;
-    color: #888;
+#crypto-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--input-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Loading animation */
