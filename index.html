@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoonBag | Crypto Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Add modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Add icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i> MoonBag</h1>
+            <p class="subtitle">Know your numbers: Calculate what it really takes to moon</p>
+        </header>
+
+        <div class="calculator-card">
+            <div class="input-group">
+                <label>Initial Investment ($)</label>
+                <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal" pattern="[0-9,]*">
+            </div>
+
+            <div class="input-group">
+                <label>Select Cryptocurrency</label>
+                <select id="crypto">
+                    <option value="bitcoin">Bitcoin (BTC)</option>
+                    <option value="ethereum">Ethereum (ETH)</option>
+                    <option value="dogecoin">Dogecoin (DOGE)</option>
+                    <option value="solana">Solana (SOL)</option>
+                </select>
+            </div>
+
+            <div class="toggle-container">
+                <button class="toggle-btn active" data-mode="profit">Profit Target</button>
+                <button class="toggle-btn" data-mode="price">Price Target</button>
+                <button class="toggle-btn" data-mode="holdings">Holdings Target</button>
+            </div>
+
+            <div id="profit-inputs" class="input-section">
+                <div class="input-group">
+                    <label>Target Profit ($)</label>
+                    <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal" pattern="[0-9,]*">
+                </div>
+                <div class="input-group">
+                    <label>Required Return (%)</label>
+                    <input type="number" id="return-percentage" readonly>
+                </div>
+            </div>
+
+            <div id="price-inputs" class="input-section hidden">
+                <div class="input-group">
+                    <label>Target Price ($)</label>
+                    <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal" pattern="[0-9,]*">
+                </div>
+                <div class="input-group">
+                    <label>Current Price ($)</label>
+                    <input type="number" id="current-price" readonly>
+                </div>
+            </div>
+
+            <div id="holdings-inputs" class="input-section hidden">
+                <div class="input-group">
+                    <label>Target Balance ($)</label>
+                    <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal" pattern="[0-9,]*">
+                </div>
+                <div class="input-group">
+                    <label>Current Price ($)</label>
+                    <input type="number" id="holdings-current-price" readonly>
+                </div>
+            </div>
+
+            <button id="calculate-btn" class="calculate-btn">Calculate <i class="fas fa-calculator"></i></button>
+
+            <div class="result" id="result">
+                <div class="current-price">
+                    <span>Current Price:</span>
+                    <span id="live-price">Loading...</span>
+                </div>
+                <div class="required-price hidden">
+                    <span>Required Price:</span>
+                    <span id="required-price">-</span>
+                </div>
+                <div class="return-needed hidden">
+                    <span>Return Needed:</span>
+                    <span id="return-needed">-</span>
+                </div>
+                <div class="required-holdings hidden">
+                    <span>Required Holdings:</span>
+                    <span id="required-holdings">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
