@@ -1,345 +1,396 @@
-// API endpoints
+// Constants
 const COINGECKO_MARKETS_URL = 'https://api.coingecko.com/api/v3/coins/markets';
-const CRYPTO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
+const QUERY_PARAMS = '?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false';
 
-// Store current state
-let selectedCryptoId = 'bitcoin';
-let currentPrice = 0;
-let coinCache = {
-    timestamp: 0,
-    data: []
-};
+// State management
+let currentStep = 1;
+let selectedCrypto = null;
+let selectedStrategy = null;
+let cryptoList = [];
 
 // DOM Elements
-const cryptoGrid = document.getElementById('crypto-grid');
-const cryptoSearch = document.getElementById('crypto-search');
-const selectedCryptoIcon = document.getElementById('selected-crypto-icon');
-const selectedCryptoText = document.getElementById('selected-crypto-text');
-const livePrice = document.getElementById('live-price');
-const currentPriceElement = document.getElementById('current-price');
-const requiredPrice = document.getElementById('required-price');
-const returnNeeded = document.getElementById('return-needed');
-const investmentInput = document.getElementById('investment');
-const profitTarget = document.getElementById('profit-target');
-const priceTarget = document.getElementById('price-target');
-const balanceTarget = document.getElementById('balance-target');
-const requiredHoldings = document.getElementById('required-holdings');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const step3 = document.getElementById('step3');
+const cryptoGrid = document.getElementById('cryptoGrid');
+const cryptoSearch = document.getElementById('cryptoSearch');
+const calculateBtn = document.getElementById('calculateBtn');
+const resultsSection = document.getElementById('resultsSection');
+const resultsContent = document.getElementById('resultsContent');
+const inputFields = document.getElementById('inputFields');
 
-// Fetch top cryptocurrencies
-async function fetchCryptoData() {
-    try {
-        const params = new URLSearchParams({
-            vs_currency: 'usd',
-            order: 'market_cap_desc',
-            per_page: '250',
-            page: '1',
-            sparkline: 'false',
-            price_change_percentage: '24h'
-        });
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    initializeStarryBackground();
+    fetchCryptoData().then(() => {
+        // Pre-select Bitcoin after data is fetched
+        const bitcoinId = 'bitcoin';
+        handleCryptoSelection(bitcoinId);
+        document.getElementById('cryptoSearch').value = 'Bitcoin';
+    });
+    setupEventListeners();
+});
 
-        const response = await fetch(`${COINGECKO_MARKETS_URL}?${params}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const data = await response.json();
-        coinCache = { timestamp: Date.now(), data: data };
-        return data;
-    } catch (error) {
-        console.error('Error fetching cryptocurrency data:', error);
-        if (coinCache.data.length > 0) return coinCache.data;
-        
-        // Fallback data
-        return [
-            { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-            { id: 'ethereum', symbol: 'eth', name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' }
-        ];
+// Create starry background
+function initializeStarryBackground() {
+    const starsContainer = document.getElementById('stars');
+    for (let i = 0; i < 100; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.width = Math.random() * 3 + 'px';
+        star.style.height = star.style.width;
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 4 + 's';
+        starsContainer.appendChild(star);
     }
 }
 
-// Update dropdown with filtered results
-function updateDropdown(searchTerm = '') {
-    if (!coinCache.data.length) return;
+// Fetch crypto data from CoinGecko
+async function fetchCryptoData() {
+    try {
+        const response = await fetch(COINGECKO_MARKETS_URL + QUERY_PARAMS);
+        cryptoList = await response.json();
+        renderCryptoDropdown(cryptoList);
+    } catch (error) {
+        cryptoGrid.innerHTML = '<p class="text-red-500">Error fetching cryptocurrency data. Please try again later.</p>';
+        console.error('Error fetching crypto data:', error);
+    }
+}
 
-    const filteredCoins = coinCache.data.filter(coin => 
-        coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    cryptoGrid.innerHTML = filteredCoins.map(coin => `
-        <div class="crypto-option cursor-pointer p-3 hover:bg-input/50 transition-all flex items-center gap-3"
-             data-value="${coin.id}">
-            <img src="${coin.image}" alt="${coin.symbol}" class="w-6 h-6 rounded-full">
-            <div class="flex-1">
-                <div class="font-medium">${coin.name} (${coin.symbol.toUpperCase()})</div>
-                <div class="text-sm text-gray-400">
-                    Mkt Cap: ${formatMarketCap(coin.market_cap)} | 
-                    24h: ${formatPriceChange(coin.price_change_percentage_24h)}
+// Render crypto grid
+function renderCryptoDropdown(coins) {
+    const dropdown = document.getElementById('cryptoDropdown');
+    dropdown.innerHTML = coins.map(coin => `
+        <div class="crypto-option p-3 hover:bg-gray-700 cursor-pointer" data-id="${coin.id}">
+            <div class="flex items-center space-x-3">
+                <img src="${coin.image}" alt="${coin.name}" class="w-6 h-6">
+                <div class="flex-1">
+                    <h3 class="font-medium">${coin.name}</h3>
+                    <p class="text-sm text-gray-400">${coin.symbol.toUpperCase()}</p>
                 </div>
-            </div>
-            <div class="text-right text-primary font-mono">
-                ${formatPrice(coin.current_price)}
+                <div class="text-right">
+                    <p class="font-medium">$${formatNumber(coin.current_price)}</p>
+                </div>
             </div>
         </div>
     `).join('');
 }
 
-// Helper functions
-function formatMarketCap(marketCap) {
-    if (!marketCap) return 'N/A';
-    if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
-    if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
-    if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
-    return `$${marketCap.toLocaleString()}`;
-}
+// Setup event listeners
+function setupEventListeners() {
+    const searchInput = document.getElementById('cryptoSearch');
+    const dropdown = document.getElementById('cryptoDropdown');
+    const strategyInputs = document.getElementById('strategyInputs');
 
-function formatPriceChange(change) {
-    if (!change) return '0.00%';
-    return `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-}
-
-function formatPrice(price) {
-    if (typeof price !== 'number') return '$0.00';
-    return price >= 1
-        ? `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : `$${price.toFixed(8)}`;
-}
-
-function formatVolume(volume) {
-    if (!volume) return 'N/A';
-    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
-    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
-    return `$${volume.toLocaleString()}`;
-}
-
-function formatSupply(supply) {
-    if (!supply) return 'N/A';
-    if (supply >= 1e9) return `${(supply / 1e9).toFixed(2)}B`;
-    if (supply >= 1e6) return `${(supply / 1e6).toFixed(2)}M`;
-    return `${supply.toLocaleString()}`;
-}
-
-// Update price for selected crypto
-async function updatePrice() {
-    try {
-        livePrice.textContent = 'Fetching price...';
-        livePrice.classList.add('loading');
-
-        const response = await fetch(`${CRYPTO_API_URL}?ids=${selectedCryptoId}&vs_currencies=usd`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const data = await response.json();
-        currentPrice = data[selectedCryptoId].usd;
-        
-        const formattedPrice = currentPrice >= 1 
-            ? currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            : currentPrice.toFixed(8);
-        
-        livePrice.textContent = `$${formattedPrice}`;
-        currentPriceElement.textContent = `$${formattedPrice}`;
-        calculateResults();
-    } catch (error) {
-        console.error('Error fetching price:', error);
-        livePrice.textContent = 'Error loading price';
-    } finally {
-        livePrice.classList.remove('loading');
-    }
-}
-
-// Initialize dropdown functionality
-function initializeDropdown() {
-    // Toggle dropdown on selector click
-    cryptoGrid.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        cryptoGrid.classList.toggle('hidden');
-        
-        if (!cryptoGrid.classList.contains('hidden')) {
-            cryptoSearch.focus();
-            // Fetch data if we haven't already
-            if (coinCache.data.length === 0) {
-                await fetchCryptoData();
-            }
-            updateDropdown('');
-        }
+    // Show dropdown when clicking on search input
+    searchInput.addEventListener('focus', () => {
+        dropdown.classList.remove('hidden');
     });
 
-    // Handle search input
-    cryptoSearch.addEventListener('input', (e) => {
-        updateDropdown(e.target.value);
-    });
-
-    // Close dropdown when clicking outside
+    // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
-        if (!cryptoGrid.contains(e.target) && e.target !== cryptoGrid) {
-            cryptoGrid.classList.add('hidden');
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
         }
+    });
+
+    // Filter coins on input
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredCoins = cryptoList.filter(coin => 
+            coin.name.toLowerCase().includes(searchTerm) || 
+            coin.symbol.toLowerCase().includes(searchTerm)
+        );
+        renderCryptoDropdown(filteredCoins);
+        dropdown.classList.remove('hidden');
     });
 
     // Handle crypto selection
-    cryptoGrid.addEventListener('click', (e) => {
+    dropdown.addEventListener('click', (e) => {
         const option = e.target.closest('.crypto-option');
-        if (option) {
-            const selectedId = option.dataset.value;
-            const selectedCoin = coinCache.data.find(coin => coin.id === selectedId);
-            
-            if (selectedCoin) {
-                selectedCryptoText.textContent = `${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()})`;
-                selectedCryptoIcon.src = selectedCoin.image;
-                selectedCryptoIcon.classList.remove('hidden');
-                selectedCryptoId = selectedId;
-                cryptoGrid.classList.add('hidden');
-                updatePrice();
-            }
-        }
+        if (!option) return;
+        
+        const cryptoId = option.dataset.id;
+        handleCryptoSelection(cryptoId);
+        searchInput.value = selectedCrypto.name;
+        dropdown.classList.add('hidden');
     });
-}
 
-// Initialize everything when the page loads
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Initialize dropdown functionality
-        initializeDropdown();
-        
-        // Fetch initial data
-        const data = await fetchCryptoData();
-        
-        // Set initial selection to Bitcoin
-        const bitcoin = data.find(coin => coin.id === 'bitcoin');
-        if (bitcoin) {
-            selectedCryptoText.textContent = `${bitcoin.name} (${bitcoin.symbol.toUpperCase()})`;
-            selectedCryptoIcon.src = bitcoin.image;
-            selectedCryptoIcon.classList.remove('hidden');
-            updatePrice();
-        }
-        
-        // Add calculation event listeners
-        [investmentInput, profitTarget, priceTarget, balanceTarget].forEach(input => {
-            if (input) {
-                input.addEventListener('input', calculateResults);
-            }
-        });
-        
-        // Initialize strategy buttons
-        document.querySelectorAll('.strategy-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.strategy-btn').forEach(b => 
-                    b.classList.remove('active', 'bg-primary/20', 'text-primary'));
-                btn.classList.add('active', 'bg-primary/20', 'text-primary');
-                
-                document.querySelectorAll('#profit-inputs, #price-inputs, #holdings-inputs')
-                    .forEach(el => el.classList.add('hidden'));
-                
-                const strategy = btn.dataset.strategy;
-                document.getElementById(`${strategy}-inputs`).classList.remove('hidden');
-                calculateResults();
-            });
-        });
-    } catch (error) {
-        console.error('Error initializing app:', error);
-        selectedCryptoText.textContent = 'Error loading cryptocurrencies';
-    }
-});
-
-// Calculate results based on inputs
-function calculateResults() {
-    const investment = parseFloat(investmentInput?.value || 0);
-    if (!investment || !currentPrice) return;
-
-    const coins = investment / currentPrice;
-    const activeStrategy = document.querySelector('.strategy-btn.active')?.dataset.strategy;
-
-    switch(activeStrategy) {
-        case 'profit':
-            const profit = parseFloat(profitTarget?.value || 0);
-            if (profit) {
-                const targetValue = investment + profit;
-                const requiredPriceValue = targetValue / coins;
-                const returnPct = (profit / investment) * 100;
-                
-                requiredPrice.textContent = formatPrice(requiredPriceValue);
-                returnNeeded.textContent = `${returnPct.toFixed(2)}%`;
-            }
-            break;
-
-        case 'price':
-            const targetPrice = parseFloat(priceTarget?.value || 0);
-            if (targetPrice) {
-                const finalValue = coins * targetPrice;
-                const profitAmount = finalValue - investment;
-                const returnPct = (profitAmount / investment) * 100;
-                
-                requiredPrice.textContent = formatPrice(targetPrice);
-                returnNeeded.textContent = `${returnPct.toFixed(2)}% (Profit: ${formatPrice(profitAmount)})`;
-            }
-            break;
-
-        case 'holdings':
-            const targetBalance = parseFloat(balanceTarget?.value || 0);
-            if (targetBalance) {
-                document.querySelector('.required-holdings').classList.remove('hidden');
-                const requiredCoins = targetBalance / currentPrice;
-                const currentCoins = investment / currentPrice;
-                const additionalCoins = requiredCoins - currentCoins;
-                
-                requiredHoldings.innerHTML = `
-                    Current: ${formatCoinAmount(currentCoins)} coins<br>
-                    Required: ${formatCoinAmount(requiredCoins)} coins<br>
-                    Additional needed: ${formatCoinAmount(additionalCoins)} coins
+    // Strategy selection - fix the duplication issue
+    document.querySelectorAll('.strategy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active state from all buttons
+            document.querySelectorAll('.strategy-btn').forEach(b => {
+                b.classList.remove('active');
+                // Reset button content to original state
+                b.innerHTML = `
+                    <h3 class="text-lg font-semibold">${b.querySelector('h3').textContent}</h3>
+                    <p class="text-sm text-gray-400">${b.querySelector('p').textContent}</p>
                 `;
-            }
-            break;
-    }
+            });
+            
+            // Add active state to clicked button
+            btn.classList.add('active');
+            selectedStrategy = btn.dataset.strategy;
+            
+            // Setup input fields in the separate container
+            setupInputFields(selectedStrategy);
+        });
+    });
+
+    // Calculate button
+    calculateBtn.addEventListener('click', calculateResults);
 }
 
-function formatCoinAmount(amount) {
-    return amount >= 1 ? amount.toLocaleString(undefined, { maximumFractionDigits: 8 }) 
-                      : amount.toFixed(8);
-}
-
-// Update price every 30 seconds
-setInterval(updatePrice, 30000);
-
-// Add these new helper functions
-
-function getRarityBadge(rank) {
-    const rarityConfig = {
-        legendary: { max: 10, color: 'from-yellow-400 to-orange-500' },
-        epic: { max: 50, color: 'from-purple-600 to-indigo-600' },
-        rare: { max: 100, color: 'from-blue-400 to-cyan-400' },
-        uncommon: { max: 250, color: 'from-green-400 to-emerald-500' },
-        common: { max: Infinity, color: 'from-gray-400 to-gray-500' }
+// Setup input fields based on strategy
+function setupInputFields(strategy) {
+    const inputsContainer = document.getElementById('strategyInputs');
+    
+    const fields = {
+        profit: `
+            <div class="space-y-4">
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
+                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
+                </div>
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Profit Target ($)</label>
+                    <input type="number" id="profitTarget" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target profit">
+                </div>
+                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
+            </div>
+        `,
+        price: `
+            <div class="space-y-4">
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
+                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
+                </div>
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Target Price ($)</label>
+                    <input type="number" id="targetPrice" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target price">
+                </div>
+                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
+            </div>
+        `,
+        holdings: `
+            <div class="space-y-4">
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
+                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
+                </div>
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Target Balance ($)</label>
+                    <input type="number" id="targetBalance" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target balance">
+                </div>
+                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
+            </div>
+        `
     };
 
-    const rarity = Object.entries(rarityConfig).find(([_, config]) => rank <= config.max);
-    
-    return `
-        <div class="px-3 py-1 rounded-full bg-gradient-to-r ${rarity[1].color} 
-                    text-white text-xs font-bold uppercase tracking-wider">
-            ${rarity[0]}
-        </div>
-    `;
+    inputsContainer.innerHTML = fields[strategy];
+    inputsContainer.classList.remove('hidden');
+
+    // Add calculate button event listener
+    const calculateBtn = document.getElementById('calculateBtn');
+    if (calculateBtn) {
+        calculateBtn.addEventListener('click', calculateResults);
+    }
 }
 
-function getAchievementBadges(coin) {
-    const achievements = [];
-    
-    // Market Cap Achievements
-    if (coin.market_cap >= 1e11) achievements.push({
-        name: 'Titan',
-        description: '$100B+ Market Cap',
-        color: 'bg-yellow-500'
+// Calculate results based on strategy
+function calculateResults() {
+    const investmentAmount = parseFloat(document.getElementById('investmentAmount').value);
+    if (!investmentAmount || isNaN(investmentAmount)) {
+        alert('Please enter a valid investment amount');
+        return;
+    }
+
+    const currentPrice = selectedCrypto.current_price;
+    const initialCoins = investmentAmount / currentPrice;
+    let results = '';
+
+    switch (selectedStrategy) {
+        case 'profit': {
+            const profitTarget = parseFloat(document.getElementById('profitTarget').value);
+            if (!profitTarget || isNaN(profitTarget)) {
+                alert('Please enter a valid profit target');
+                return;
+            }
+            const profitTargetBalance = investmentAmount + profitTarget;
+            const requiredPrice = profitTargetBalance / initialCoins;
+            const percentageIncrease = ((requiredPrice - currentPrice) / currentPrice) * 100;
+
+            results = `
+                <div class="space-y-4">
+                    <div class="stat-box">
+                        <span class="stat-label">Required Price</span>
+                        <span class="stat-value">$${formatNumber(requiredPrice)}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Price Increase Needed</span>
+                        <span class="stat-value">${percentageIncrease.toFixed(2)}%</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Your Holdings</span>
+                        <span class="stat-value">${formatNumber(initialCoins)} ${selectedCrypto.symbol.toUpperCase()}</span>
+                    </div>
+                </div>
+            `;
+            break;
+        }
+
+        case 'price': {
+            const targetPrice = parseFloat(document.getElementById('targetPrice').value);
+            if (!targetPrice || isNaN(targetPrice)) {
+                alert('Please enter a valid target price');
+                return;
+            }
+            const potentialValue = initialCoins * targetPrice;
+            const potentialProfit = potentialValue - investmentAmount;
+            const pricePercentageChange = ((targetPrice - currentPrice) / currentPrice) * 100;
+
+            results = `
+                <div class="space-y-4">
+                    <div class="stat-box">
+                        <span class="stat-label">Potential Value</span>
+                        <span class="stat-value">$${formatNumber(potentialValue)}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Potential Profit</span>
+                        <span class="stat-value">$${formatNumber(potentialProfit)}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Price Percentage Change</span>
+                        <span class="stat-value">${pricePercentageChange.toFixed(2)}%</span>
+                    </div>
+                </div>
+            `;
+            break;
+        }
+
+        case 'holdings': {
+            const holdingsTargetBalance = parseFloat(document.getElementById('targetBalance').value);
+            if (!holdingsTargetBalance || isNaN(holdingsTargetBalance)) {
+                alert('Please enter a valid target balance');
+                return;
+            }
+            const requiredCoins = holdingsTargetBalance / currentPrice;
+            const additionalInvestment = (requiredCoins - initialCoins) * currentPrice;
+
+            results = `
+                <div class="space-y-4">
+                    <div class="stat-box">
+                        <span class="stat-label">Required Holdings</span>
+                        <span class="stat-value">${formatNumber(requiredCoins)} ${selectedCrypto.symbol.toUpperCase()}</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Additional Investment Needed</span>
+                        <span class="stat-value">$${formatNumber(additionalInvestment)}</span>
+                    </div>
+                </div>
+            `;
+            break;
+        }
+    }
+
+    resultsContent.innerHTML = results;
+    showResults();
+}
+
+// Show results
+function showResults() {
+    resultsSection.classList.remove('hidden');
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Navigation between steps
+function goToStep(stepNumber) {
+    // Hide all steps
+    document.querySelectorAll('.step-section').forEach(section => {
+        section.classList.add('hidden');
     });
     
-    // Price Achievements
-    if (coin.current_price >= 10000) achievements.push({
-        name: 'Whale',
-        description: '$10k+ Price',
-        color: 'bg-blue-500'
-    });
+    // Show current step
+    const currentStepElement = document.getElementById(`step${stepNumber}`);
+    if (currentStepElement) {
+        currentStepElement.classList.remove('hidden');
+        // Scroll into view smoothly
+        currentStepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     
-    // Age Achievements
-    const ageInYears = (new Date() - new Date(coin.genesis_date)) / (1000 * 60 * 60 * 24 * 365);
-    if (ageInYears >= 10) achievements.push({
-        name: 'Elder',
-        description: `${Math.floor(ageInYears)} years old`,
-        color: 'bg-green-500'
-    });
+    // Hide results when going back to earlier steps
+    if (stepNumber < 3) {
+        resultsSection.classList.add('hidden');
+    }
+    
+    currentStep = stepNumber;
+}
+
+// Helper functions
+function formatNumber(num) {
+    if (num >= 1) {
+        return num.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    return num.toFixed(8);
+}
+
+// Update the crypto selection handler
+function handleCryptoSelection(cryptoId) {
+    selectedCrypto = cryptoList.find(coin => coin.id === cryptoId);
+    
+    // Create Pokemon/MTG style card
+    const card = document.getElementById('cryptoCard');
+    card.innerHTML = `
+        <div class="crypto-card-inner">
+            <!-- Card Frame -->
+            <div class="card-frame">
+                <!-- Card Header -->
+                <div class="card-header glass p-4 rounded-t-xl border-b border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold">${selectedCrypto.name}</h3>
+                        <span class="text-sm font-mono bg-gray-700 px-2 py-1 rounded">
+                            ${selectedCrypto.symbol.toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Card Image -->
+                <div class="card-image p-6 bg-gradient-to-b from-gray-800 to-gray-900 flex justify-center items-center">
+                    <img src="${selectedCrypto.image}" alt="${selectedCrypto.name}" class="w-24 h-24">
+                </div>
+                
+                <!-- Card Stats -->
+                <div class="card-stats p-4 space-y-2 bg-gray-800 rounded-b-xl">
+                    <div class="stat-row flex justify-between items-center">
+                        <span class="text-gray-400">Rank</span>
+                        <span class="font-mono">#${selectedCrypto.market_cap_rank}</span>
+                    </div>
+                    <div class="stat-row flex justify-between items-center">
+                        <span class="text-gray-400">Price</span>
+                        <span class="font-mono">$${formatNumber(selectedCrypto.current_price)}</span>
+                    </div>
+                    <div class="stat-row flex justify-between items-center">
+                        <span class="text-gray-400">24h Change</span>
+                        <span class="font-mono ${selectedCrypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}">
+                            ${selectedCrypto.price_change_percentage_24h.toFixed(2)}%
+                        </span>
+                    </div>
+                    <div class="stat-row flex justify-between items-center">
+                        <span class="text-gray-400">Market Cap</span>
+                        <span class="font-mono">$${formatNumber(selectedCrypto.market_cap)}</span>
+                    </div>
+                    <div class="stat-row flex justify-between items-center">
+                        <span class="text-gray-400">Volume</span>
+                        <span class="font-mono">$${formatNumber(selectedCrypto.total_volume)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    card.classList.remove('hidden');
 }

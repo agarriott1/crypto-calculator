@@ -3,395 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoonBag | Crypto Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#00fff2',
-                        secondary: '#00ff88',
-                        dark: '#0a0a0f',
-                        card: '#1a1a24',
-                        input: '#2d2d3d',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style>
-        .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .loading::after {
-            content: '';
-            animation: dots 1.5s steps(5, end) infinite;
-        }
-
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80% { content: '...'; }
-        }
-
-        /* Glassmorphism */
-        .glass {
-            background: rgba(26, 26, 36, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .star {
-            position: absolute;
-            background-color: #fff;
-            border-radius: 50%;
-            opacity: 0.3;
-            animation: twinkle 4s infinite;
-        }
-
-        @keyframes twinkle {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-            100% { opacity: 0.3; }
-        }
-
-        .perspective-1000 {
-            perspective: 1000px;
-        }
-
-        .transform-style-preserve-3d {
-            transform-style: preserve-3d;
-        }
-
-        .backface-hidden {
-            backface-visibility: hidden;
-        }
-
-        .rotate-y-180 {
-            transform: rotateY(180deg);
-        }
-
-        .crypto-card-wrapper:hover .crypto-card {
-            transform: rotateY(180deg);
-        }
-
-        /* Rarity-based card borders */
-        .rarity-border-legendary {
-            background: linear-gradient(45deg, #ffd700, #ff8c00, #ffd700);
-            animation: borderGlow 3s ease-in-out infinite;
-        }
-
-        .rarity-border-epic {
-            background: linear-gradient(45deg, #9400d3, #4b0082, #9400d3);
-            animation: borderGlow 4s ease-in-out infinite;
-        }
-
-        .rarity-border-rare {
-            background: linear-gradient(45deg, #0066ff, #00ffff, #0066ff);
-            animation: borderGlow 5s ease-in-out infinite;
-        }
-
-        /* Holographic effect */
-        .holographic-foil {
-            background: linear-gradient(
-                125deg,
-                rgba(255,255,255,0) 0%,
-                rgba(255,255,255,0.1) 25%,
-                rgba(255,255,255,0.2) 50%,
-                rgba(255,255,255,0.1) 75%,
-                rgba(255,255,255,0) 100%
-            );
-            background-size: 400% 400%;
-            animation: holographic 3s ease infinite;
-        }
-
-        @keyframes borderGlow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        @keyframes holographic {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .stat-box {
-            @apply bg-black/20 rounded-xl p-3 flex flex-col;
-        }
-
-        .stat-label {
-            @apply text-sm text-gray-400;
-        }
-
-        .stat-value {
-            @apply font-medium text-white;
-        }
-
-        .achievement-badge {
-            @apply px-2 py-1 rounded-full text-xs font-medium;
-        }
-    </style>
+    <title>MoonBag - Smart Crypto Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans p-4 md:p-8">
-    <div class="max-w-4xl mx-auto space-y-6">
+<body class="min-h-screen bg-gray-900 text-white font-inter">
+    <!-- Stars Background -->
+    <div id="stars" class="fixed inset-0 z-0"></div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
         <!-- Header -->
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-primary mb-2 drop-shadow-[0_0_10px_rgba(0,255,242,0.3)]">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
                 MoonBag
             </h1>
-            <p class="text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
+            <p class="text-lg text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
         </header>
 
-        <!-- Section 1: Coin Selection -->
-        <section class="glass rounded-xl p-6 space-y-4">
-            <h2 class="text-xl font-semibold text-primary/80">Select Your Coin</h2>
-            
-            <!-- Search Bar -->
-            <div class="relative">
-                <input type="text" id="crypto-search" 
-                       placeholder="Search coins..." 
-                       class="w-full p-4 bg-input rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50">
-            </div>
-
-            <!-- Crypto Grid -->
-            <div id="crypto-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-                <!-- Card Template -->
-                <div class="crypto-card-wrapper perspective-1000">
-                    <div class="crypto-card relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer">
-                        <!-- Front of Card -->
-                        <div class="card-front absolute w-full h-full backface-hidden">
-                            <div class="card-frame relative bg-gradient-to-br from-card/90 to-card rounded-2xl overflow-hidden">
-                                <!-- Holographic Effect -->
-                                <div class="holographic-foil absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                
-                                <!-- Rarity Border -->
-                                <div class="rarity-border absolute inset-0 rounded-2xl"></div>
-                                
-                                <!-- Card Number -->
-                                <div class="absolute top-2 right-2 text-xs font-mono text-primary/80">
-                                    ${coin.market_cap_rank}/250
-                                </div>
-
-                                <!-- Main Content -->
-                                <div class="p-6 space-y-4 relative z-10">
-                                    <!-- Header with Rarity Badge -->
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <img src="${coin.image}" class="w-12 h-12 rounded-full ring-2 ring-primary/20">
-                                            <div>
-                                                <h3 class="text-xl font-bold text-white">${coin.symbol.toUpperCase()}</h3>
-                                                <p class="text-sm text-gray-400">${coin.name}</p>
-                                            </div>
-                                        </div>
-                                        <div class="rarity-badge">
-                                            ${getRarityBadge(coin.market_cap_rank)}
-                                        </div>
-                                    </div>
-
-                                    <!-- Price Chart -->
-                                    <div class="h-32 bg-black/20 rounded-xl p-2">
-                                        <canvas class="price-chart w-full h-full"></canvas>
-                                    </div>
-
-                                    <!-- Stats Grid -->
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div class="stat-box">
-                                            <span class="stat-label">Price</span>
-                                            <span class="stat-value">${formatPrice(coin.current_price)}</span>
-                                        </div>
-                                        <div class="stat-box">
-                                            <span class="stat-label">24h</span>
-                                            <span class="stat-value ${getChangeColor(coin.price_change_percentage_24h)}">
-                                                ${formatChange(coin.price_change_percentage_24h)}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Achievement Badges -->
-                                    <div class="achievement-badges flex gap-2">
-                                        ${getAchievementBadges(coin)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Back of Card -->
-                        <div class="card-back absolute w-full h-full backface-hidden rotate-y-180">
-                            <div class="card-frame relative bg-gradient-to-br from-card/90 to-card rounded-2xl overflow-hidden p-6">
-                                <h3 class="text-lg font-bold text-primary mb-4">Detailed Stats</h3>
-                                
-                                <!-- Market Stats -->
-                                <div class="space-y-3">
-                                    <div class="stat-row">
-                                        <span class="text-gray-400">Market Cap</span>
-                                        <span class="text-white">${formatMarketCap(coin.market_cap)}</span>
-                                    </div>
-                                    <div class="stat-row">
-                                        <span class="text-gray-400">Volume (24h)</span>
-                                        <span class="text-white">${formatVolume(coin.total_volume)}</span>
-                                    </div>
-                                    <div class="stat-row">
-                                        <span class="text-gray-400">Circulating Supply</span>
-                                        <span class="text-white">${formatSupply(coin.circulating_supply)}</span>
-                                    </div>
-                                </div>
-
-                                <!-- Historical Milestones -->
-                                <div class="mt-4">
-                                    <h4 class="text-sm font-semibold text-primary mb-2">Milestones</h4>
-                                    <div class="space-y-2">
-                                        <div class="milestone">
-                                            <span>ATH</span>
-                                            <span>${formatPrice(coin.ath)} (${formatDate(coin.ath_date)})</span>
-                                        </div>
-                                        <div class="milestone">
-                                            <span>Genesis</span>
-                                            <span>${formatDate(coin.genesis_date)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Links & Social -->
-                                <div class="mt-4">
-                                    <h4 class="text-sm font-semibold text-primary mb-2">Resources</h4>
-                                    <div class="flex gap-2">
-                                        ${getSocialLinks(coin.links)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Crypto Card Display (Left Column) -->
+            <section class="glass p-6 rounded-xl md:col-span-1 md:row-span-2">
+                <h2 class="step-title">Selected Crypto</h2>
+                <div class="relative mb-4">
+                    <input type="text" id="cryptoSearch" placeholder="Search cryptocurrencies..." 
+                           class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400">
+                    <div id="cryptoDropdown" class="hidden absolute w-full mt-2 max-h-60 overflow-y-auto bg-gray-800 rounded-lg border border-gray-700 z-50">
+                        <!-- Dropdown options will be inserted here -->
                     </div>
                 </div>
-            </div>
-
-            <!-- Selected Coin Info -->
-            <div class="bg-input/30 rounded-lg p-4 space-y-2">
-                <div class="flex items-center gap-3">
-                    <img id="selected-crypto-icon" src="" alt="" class="w-8 h-8 rounded-full hidden">
-                    <span id="selected-crypto-text" class="text-lg font-medium">Select a cryptocurrency</span>
+                <div id="cryptoCard" class="crypto-card-display hidden">
+                    <!-- Pokemon/MTG style card will be inserted here -->
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-400">Live Price:</span>
-                    <span id="live-price" class="text-xl font-semibold text-primary">$0.00</span>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Section 2: Strategy Selection -->
-        <section class="glass rounded-xl p-6 space-y-4">
-            <h2 class="text-xl font-semibold text-primary/80">Select Your Strategy</h2>
-            
-            <!-- Strategy Toggle Buttons -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button class="strategy-btn active" data-strategy="profit">
-                    <span class="text-lg">Profit Target</span>
-                    <span class="text-sm text-gray-400">Calculate required price for profit</span>
-                </button>
-                <button class="strategy-btn" data-strategy="price">
-                    <span class="text-lg">Price Target</span>
-                    <span class="text-sm text-gray-400">Find profit at target price</span>
-                </button>
-                <button class="strategy-btn" data-strategy="holdings">
-                    <span class="text-lg">Holdings Target</span>
-                    <span class="text-sm text-gray-400">Calculate required position</span>
-                </button>
-            </div>
-
-            <!-- Input Fields -->
-            <div class="space-y-4 mt-6">
-                <!-- Common Input -->
-                <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Initial Investment ($)</label>
-                    <input type="text" id="investment" 
-                           class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                           placeholder="Enter amount">
-                </div>
-
-                <!-- Strategy Specific Inputs -->
-                <div id="profit-inputs" class="space-y-4">
-                    <div class="input-group">
-                        <label class="block text-sm text-gray-400 mb-1">Target Profit ($)</label>
-                        <input type="text" id="profit-target"
-                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                               placeholder="Enter target profit">
+            <!-- Strategy Selection Card (Top Right) -->
+            <section class="glass p-6 rounded-xl md:col-span-2">
+                <h2 class="step-title">Choose Strategy</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="strategy-buttons flex space-x-4">
+                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="profit">
+                            <h3 class="text-lg font-semibold">Profit Target</h3>
+                            <p class="text-sm text-gray-400">Calculate price needed for desired profit</p>
+                        </button>
+                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="price">
+                            <h3 class="text-lg font-semibold">Price Target</h3>
+                            <p class="text-sm text-gray-400">Calculate profit at target price</p>
+                        </button>
+                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="holdings">
+                            <h3 class="text-lg font-semibold">Holdings Target</h3>
+                            <p class="text-sm text-gray-400">Calculate coins needed for target balance</p>
+                        </button>
+                    </div>
+                    
+                    <!-- Strategy Input Fields Container -->
+                    <div id="strategyInputs" class="strategy-inputs mt-4 hidden">
+                        <!-- Input fields will be dynamically inserted here -->
                     </div>
                 </div>
+            </section>
 
-                <div id="price-inputs" class="space-y-4 hidden">
-                    <div class="input-group">
-                        <label class="block text-sm text-gray-400 mb-1">Target Price ($)</label>
-                        <input type="text" id="price-target"
-                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                               placeholder="Enter target price">
-                    </div>
+            <!-- Results Section (Bottom Right) -->
+            <section class="glass p-6 rounded-xl md:col-span-2">
+                <h2 class="step-title">Results</h2>
+                <div id="resultsContent" class="space-y-4">
+                    <!-- Results will be dynamically inserted here -->
                 </div>
-
-                <div id="holdings-inputs" class="space-y-4 hidden">
-                    <div class="input-group">
-                        <label class="block text-sm text-gray-400 mb-1">Target Balance ($)</label>
-                        <input type="text" id="balance-target"
-                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                               placeholder="Enter target balance">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 3: Results -->
-        <section class="glass rounded-xl p-6 space-y-4">
-            <h2 class="text-xl font-semibold text-primary/80">Results</h2>
-            
-            <div id="result" class="space-y-4">
-                <div class="bg-input/30 rounded-lg p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="current-price">
-                            <span class="text-gray-400">Current Price:</span>
-                            <span id="current-price" class="block text-xl font-semibold">$0.00</span>
-                        </div>
-                        <div class="required-price">
-                            <span class="text-gray-400">Required Price:</span>
-                            <span id="required-price" class="block text-xl font-semibold text-primary">$0.00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-input/30 rounded-lg p-4">
-                    <div class="grid grid-cols-1 gap-4">
-                        <div class="return-needed">
-                            <span class="text-gray-400">Return Needed:</span>
-                            <span id="return-needed" class="block text-xl font-semibold text-secondary">0%</span>
-                        </div>
-                        <div class="required-holdings hidden">
-                            <span class="text-gray-400">Required Holdings:</span>
-                            <div id="required-holdings" class="text-xl font-semibold text-primary"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

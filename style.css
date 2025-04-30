@@ -1,8 +1,13 @@
 :root {
-    --primary-color: #00fff2;
-    --secondary-color: #0a0a0f;
+    --primary: rgb(6, 182, 212);
+    --primary-glow: rgba(6, 182, 212, 0.5);
+    --secondary: rgb(59, 130, 246);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --background-dark: #0a0b0d;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
     --text-color: #ffffff;
-    --card-bg: #1a1a24;
     --input-bg: #2d2d3d;
     --hover-color: #00cccc;
     --gradient-start: #0a0a0f;
@@ -20,16 +25,15 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-    color: var(--text-color);
-    line-height: 1.6;
+    background: linear-gradient(to bottom, #0f172a, #1e293b);
+    color: #fff;
     min-height: 100vh;
 }
 
 .container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
 header {
@@ -39,7 +43,7 @@ header {
 }
 
 h1 {
-    color: var(--primary-color);
+    color: var(--primary);
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
@@ -52,13 +56,14 @@ h1 {
     margin: 0 auto;
 }
 
-.calculator-card {
-    background: rgba(26, 26, 26, 0.95);
-    padding: 2rem;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .input-group {
@@ -87,9 +92,9 @@ input, select, .crypto-search {
 }
 
 input:focus, select:focus, .crypto-search:focus {
-    border-color: var(--primary-color);
+    border-color: var(--primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .toggle-container {
@@ -114,8 +119,8 @@ input:focus, select:focus, .crypto-search:focus {
 }
 
 .toggle-btn.active {
-    background: var(--primary-color);
-    color: var(--secondary-color);
+    background: var(--primary);
+    color: var(--secondary);
 }
 
 .result {
@@ -147,7 +152,7 @@ input:focus, select:focus, .crypto-search:focus {
 .result span:last-child {
     font-weight: 500;
     font-size: 1.1rem;
-    color: var(--primary-color);
+    color: var(--primary);
 }
 
 .crypto-dropdown-list {
@@ -214,18 +219,33 @@ input:focus, select:focus, .crypto-search:focus {
 }
 
 .loading {
-    animation: pulse 1.5s infinite;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        padding: 0 15px;
-        margin: 1rem auto;
+        padding: 1rem;
     }
 
-    .calculator-card {
-        padding: 1.5rem;
+    .crypto-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
 
     h1 {
@@ -252,16 +272,16 @@ input:focus, select:focus, .crypto-search:focus {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-color);
+    background: var(--primary);
 }
 
 /* Add these new classes for animations */
 .fade-in {
-    animation: fadeIn 0.3s ease-in;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -270,8 +290,8 @@ input:focus, select:focus, .crypto-search:focus {
     width: 100%;
     padding: 15px;
     border: none;
-    background: var(--primary-color);
-    color: var(--secondary-color);
+    background: var(--primary);
+    color: var(--secondary);
     border-radius: 12px;
     font-size: 1.1rem;
     font-weight: 600;
@@ -326,4 +346,547 @@ input[type=number] {
 .custom-select-container {
     position: relative;
     width: 100%;
+}
+
+/* Animations */
+@keyframes glow {
+    0% { box-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary), 0 0 15px var(--primary); }
+    50% { box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary), 0 0 30px var(--primary); }
+    100% { box-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary), 0 0 15px var(--primary); }
+}
+
+/* Card Styles */
+.crypto-card {
+    animation: fadeIn 0.3s ease-out;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+}
+
+.crypto-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.crypto-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Input Styles */
+input[type="number"],
+input[type="text"] {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+    outline: none;
+}
+
+/* Button Styles */
+.strategy-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: #fff;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: left;
+}
+
+.strategy-btn:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+}
+
+.strategy-btn.active {
+    border-color: var(--primary);
+    background: rgba(0, 247, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 247, 255, 0.3);
+}
+
+/* Results Section */
+.results-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.results-card:hover {
+    border-color: rgba(0, 247, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 247, 255, 0.1);
+}
+
+/* Starry Background */
+.stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--duration) ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1); }
+}
+
+/* Crypto grid */
+.crypto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .crypto-card {
+        font-size: 0.875rem;
+    }
+    
+    .results-card {
+        margin: 1rem;
+        padding: 1rem;
+    }
+}
+
+/* Glass effect */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.glass:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Steps styling */
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+    border-radius: 2px;
+}
+
+/* Starry background */
+#stars {
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle 4s infinite;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Input styling */
+input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* Stats boxes */
+.stat-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+/* Transitions */
+.step-section {
+    transition: all 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.step-section.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .step-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Scrollbar styling for crypto grid */
+#cryptoGrid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#cryptoGrid::-webkit-scrollbar-track {
+    background: var(--glass-bg);
+    border-radius: 3px;
+}
+
+#cryptoGrid::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+/* Card transitions */
+.glass {
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.glass:hover {
+    transform: translateY(-2px);
+}
+
+/* Selected crypto info */
+#selectedCryptoInfo {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Crypto details section */
+#cryptoDetails {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Make the layout more compact on mobile */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .grid {
+        gap: 1rem;
+    }
+    
+    #cryptoGrid {
+        max-height: 300px;
+    }
+}
+
+/* Dropdown styles */
+#cryptoDropdown {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(12px);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.crypto-option {
+    transition: all 0.2s ease;
+}
+
+.crypto-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Crypto Card Display */
+.crypto-card-display {
+    margin-top: 2rem;
+}
+
+.crypto-card-inner {
+    background: var(--card-bg);
+    border: 2px solid var(--primary);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: cardEnter 0.5s ease-out;
+}
+
+.card-frame {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-image {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(6, 182, 212, 0.2), transparent);
+    animation: pulse 2s infinite;
+}
+
+.card-image img {
+    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.5));
+}
+
+.card-stats {
+    border-top: 2px solid var(--primary);
+}
+
+.stat-row {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+@keyframes cardEnter {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+/* Strategy Card Styles */
+.strategy-card {
+    perspective: 1000px;
+}
+
+.strategy-btn {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+}
+
+.strategy-btn.flipped {
+    transform: rotateY(180deg);
+}
+
+.strategy-card-front,
+.strategy-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+}
+
+.strategy-card-front {
+    transform: rotateY(0deg);
+}
+
+.strategy-card-back {
+    background: var(--card-bg);
+    transform: rotateY(180deg);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+}
+
+/* Input styling for flipped card */
+.strategy-card-back input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.strategy-card-back input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* Calculate button styling */
+.calculate-btn {
+    background: linear-gradient(to right, var(--primary), var(--secondary));
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.calculate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+/* Active strategy button */
+.strategy-btn.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+}
+
+/* Strategy section styling */
+.strategy-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .strategy-buttons {
+        flex-direction: column;
+    }
+}
+
+.strategy-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.strategy-btn:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+.strategy-btn.active {
+    border-color: var(--primary);
+    background: rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+.strategy-inputs {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Results section styling */
+#resultsContent {
+    min-height: 200px;
+}
+
+/* Ensure the crypto card takes full height */
+.crypto-card-display {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.crypto-card-inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .md\:row-span-2 {
+        grid-row: span 2 / span 2;
+    }
+}
+
+/* Dropdown positioning */
+.relative {
+    position: relative;
+}
+
+#cryptoDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Ensure the crypto card display takes remaining height */
+.crypto-card-display {
+    margin-top: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Strategy buttons on mobile */
+@media (max-width: 768px) {
+    .strategy-buttons {
+        flex-direction: column;
+    }
+    
+    .strategy-buttons .strategy-btn {
+        margin-bottom: 0.5rem;
+    }
 }
