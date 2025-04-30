@@ -439,3 +439,34 @@ async function initializeCustomSelect() {
 updatePrice();
 
 document.addEventListener('DOMContentLoaded', initializeCustomSelect);
+
+// Add this function at the end of your script.js
+function initStarryBackground() {
+    const starsContainer = document.getElementById('stars');
+    const numberOfStars = 100;
+
+    for (let i = 0; i < numberOfStars; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        // Random size between 1 and 3 pixels
+        const size = Math.random() * 2 + 1;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        
+        // Random position
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        
+        // Random animation delay
+        star.style.animationDelay = `${Math.random() * 4}s`;
+        
+        starsContainer.appendChild(star);
+    }
+}
+
+// Call this function when the document loads
+document.addEventListener('DOMContentLoaded', () => {
+    initializeCustomSelect();
+    initStarryBackground();
+});

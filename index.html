@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,119 +6,193 @@
     <title>MoonBag | Crypto Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: '#00fff2',
-              dark: '#0a0a0f',
-              card: '#1a1a24',
-              input: '#2d2d3d',
-              hover: '#00cccc',
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00fff2',
+                        secondary: '#00ff88',
+                        dark: '#0a0a0f',
+                        card: '#1a1a24',
+                        input: '#2d2d3d',
+                    },
+                    animation: {
+                        'twinkle': 'twinkle 4s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        twinkle: {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.3 },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Starry Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+        .star::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            right: -100%;
+            bottom: -100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+            opacity: 0;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.2); }
+        }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-inter">
-  <div class="max-w-2xl mx-auto px-4 py-8">
-    <header class="text-center mb-10">
-      <h1 class="text-4xl font-bold text-primary mb-2 drop-shadow-lg"><i class="fas fa-rocket"></i> MoonBag</h1>
-      <p class="text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
-    </header>
+<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-inter relative overflow-x-hidden">
+    <!-- Starry Background -->
+    <div class="stars" id="stars"></div>
 
-    <div class="bg-card rounded-2xl p-6 shadow-xl backdrop-blur-md border border-white/10">
-      <div class="space-y-4">
-        <div>
-          <label class="text-sm uppercase text-gray-400 mb-1 block">Initial Investment ($)</label>
-          <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal"
-            class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary"/>
+    <div class="relative z-10 max-w-2xl mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-primary mb-2 drop-shadow-[0_0_10px_rgba(0,255,242,0.3)]">
+                <i class="fas fa-rocket animate-float"></i> MoonBag
+            </h1>
+            <p class="text-gray-400 text-lg">Know your numbers: Calculate what it really takes to moon</p>
+        </header>
+
+        <div class="bg-card/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/10">
+            <!-- Crypto Selector Dropdown -->
+            <div class="relative mb-6">
+                <label class="text-sm uppercase text-gray-400 mb-1 block">Select Cryptocurrency</label>
+                <div class="relative" id="crypto-dropdown">
+                    <button type="button" id="crypto-selector" 
+                            class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white 
+                                   focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-between">
+                        <span class="flex items-center">
+                            <img src="" alt="" class="w-6 h-6 rounded-full mr-2 hidden" id="selected-crypto-icon">
+                            <span id="selected-crypto-text">Select a cryptocurrency</span>
+                        </span>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    
+                    <!-- Dropdown Panel -->
+                    <div id="crypto-options" 
+                         class="absolute w-full mt-2 bg-card/95 backdrop-blur-xl rounded-lg shadow-lg border border-white/10 
+                                hidden max-h-60 overflow-y-auto z-50">
+                        <div class="p-2">
+                            <input type="text" id="crypto-search" 
+                                   class="w-full px-3 py-2 bg-input rounded-lg border border-input text-white 
+                                          focus:outline-none focus:ring-2 focus:ring-primary"
+                                   placeholder="Search cryptocurrencies...">
+                        </div>
+                        <div id="crypto-list" class="py-2">
+                            <!-- Crypto options will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rest of your existing form elements with updated styling -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-input/50 rounded-lg p-2 mb-6">
+                <button class="toggle-btn active px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-dark transition-all hover:bg-opacity-90" data-mode="profit">Profit Target</button>
+                <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-primary/20 transition-all" data-mode="price">Price Target</button>
+                <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-primary/20 transition-all" data-mode="holdings">Holdings Target</button>
+            </div>
+
+            <!-- Investment Input -->
+            <div class="mb-6">
+                <label class="text-sm uppercase text-gray-400 mb-1 block">Initial Investment ($)</label>
+                <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal"
+                       class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white 
+                              focus:outline-none focus:ring-2 focus:ring-primary transition-all"/>
+            </div>
+
+            <!-- Existing sections with updated styling -->
+            <div id="profit-inputs">
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Target Profit ($)</label>
+                    <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal"
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary"/>
+                </div>
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Required Return (%)</label>
+                    <input type="number" id="return-percentage" readonly
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+                </div>
+            </div>
+
+            <div id="price-inputs" class="hidden">
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Target Price ($)</label>
+                    <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal"
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
+                </div>
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
+                    <input type="number" id="current-price" readonly
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+                </div>
+            </div>
+
+            <div id="holdings-inputs" class="hidden">
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Target Balance ($)</label>
+                    <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal"
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
+                </div>
+                <div class="mt-4">
+                    <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
+                    <input type="number" id="holdings-current-price" readonly
+                          class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="mt-6 space-y-3 bg-input/30 backdrop-blur rounded-lg p-4" id="result">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-400">Current Price:</span>
+                    <span id="live-price" class="text-primary font-mono">Loading...</span>
+                </div>
+                <div class="flex justify-between text-sm hidden" id="required-price-container">
+                    <span>Required Price:</span>
+                    <span id="required-price" class="text-primary">-</span>
+                </div>
+                <div class="flex justify-between text-sm hidden" id="return-needed-container">
+                    <span>Return Needed:</span>
+                    <span id="return-needed" class="text-primary">-</span>
+                </div>
+                <div class="flex justify-between text-sm hidden" id="required-holdings-container">
+                    <span>Required Holdings:</span>
+                    <span id="required-holdings" class="text-primary">-</span>
+                </div>
+            </div>
         </div>
-
-        <div>
-          <label class="text-sm uppercase text-gray-400 mb-1 block">Select Cryptocurrency</label>
-          <select id="crypto" class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="bitcoin">Bitcoin (BTC)</option>
-            <option value="ethereum">Ethereum (ETH)</option>
-            <option value="dogecoin">Dogecoin (DOGE)</option>
-            <option value="solana">Solana (SOL)</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-input rounded-lg p-2">
-          <button class="toggle-btn active px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-dark" data-mode="profit">Profit Target</button>
-          <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-hover" data-mode="price">Price Target</button>
-          <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-hover" data-mode="holdings">Holdings Target</button>
-        </div>
-
-        <div id="profit-inputs">
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Profit ($)</label>
-            <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal"
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary"/>
-          </div>
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Required Return (%)</label>
-            <input type="number" id="return-percentage" readonly
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
-          </div>
-        </div>
-
-        <div id="price-inputs" class="hidden">
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Price ($)</label>
-            <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal"
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
-          </div>
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
-            <input type="number" id="current-price" readonly
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
-          </div>
-        </div>
-
-        <div id="holdings-inputs" class="hidden">
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Balance ($)</label>
-            <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal"
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
-          </div>
-          <div class="mt-4">
-            <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
-            <input type="number" id="holdings-current-price" readonly
-              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
-          </div>
-        </div>
-
-        <button id="calculate-btn" class="w-full mt-6 py-3 rounded-lg bg-primary text-dark text-lg font-semibold uppercase tracking-wide hover:bg-hover">
-          Calculate <i class="fas fa-calculator"></i>
-        </button>
-
-        <div class="mt-6 space-y-3" id="result">
-          <div class="flex justify-between text-sm text-gray-400">
-            <span>Current Price:</span>
-            <span id="live-price" class="text-primary">Loading...</span>
-          </div>
-          <div class="flex justify-between text-sm hidden" id="required-price-container">
-            <span>Required Price:</span>
-            <span id="required-price" class="text-primary">-</span>
-          </div>
-          <div class="flex justify-between text-sm hidden" id="return-needed-container">
-            <span>Return Needed:</span>
-            <span id="return-needed" class="text-primary">-</span>
-          </div>
-          <div class="flex justify-between text-sm hidden" id="required-holdings-container">
-            <span>Required Holdings:</span>
-            <span id="required-holdings" class="text-primary">-</span>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
