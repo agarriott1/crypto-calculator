@@ -92,23 +92,30 @@
         <section class="glass rounded-xl p-6 space-y-4">
             <h2 class="text-xl font-semibold text-primary/80">Select Your Coin</h2>
             
+            <!-- Crypto Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="crypto-grid">
+                <!-- Top coins will be displayed as cards -->
+            </div>
+
             <!-- Crypto Selector -->
-            <div class="relative">
+            <div class="relative mt-4">
                 <button id="crypto-selector" 
-                        class="w-full p-4 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all">
+                        class="w-full p-4 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all border border-white/10">
                     <img id="selected-crypto-icon" src="" alt="" class="w-6 h-6 rounded-full hidden">
-                    <span id="selected-crypto-text">Select a cryptocurrency</span>
-                    <svg class="w-5 h-5 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    <span id="selected-crypto-text" class="flex-1 text-left">Select a cryptocurrency</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
 
                 <!-- Dropdown -->
                 <div id="crypto-options" class="absolute mt-2 w-full bg-card rounded-lg shadow-lg hidden z-50 glass">
-                    <input type="text" id="crypto-search" 
-                           placeholder="Search cryptocurrencies..." 
-                           class="w-full p-4 bg-input/50 border-b border-white/10 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <div id="crypto-list" class="max-h-96 overflow-y-auto py-2">
+                    <div class="p-2">
+                        <input type="text" id="crypto-search" 
+                               placeholder="Search cryptocurrencies..." 
+                               class="w-full p-3 bg-input/50 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    </div>
+                    <div id="crypto-list" class="max-h-96 overflow-y-auto">
                         <!-- Crypto options will be populated here -->
                     </div>
                 </div>

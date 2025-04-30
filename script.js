@@ -142,19 +142,14 @@ function initializeDropdown() {
     // Toggle dropdown on selector click
     cryptoSelector.addEventListener('click', async (e) => {
         e.stopPropagation();
-        
-        if (coinCache.data.length === 0) {
-            try {
-                await fetchCryptoData();
-            } catch (error) {
-                console.error('Error fetching crypto data:', error);
-                return;
-            }
-        }
-        
         cryptoOptions.classList.toggle('hidden');
+        
         if (!cryptoOptions.classList.contains('hidden')) {
             cryptoSearch.focus();
+            // Fetch data if we haven't already
+            if (coinCache.data.length === 0) {
+                await fetchCryptoData();
+            }
             updateDropdown('');
         }
     });
