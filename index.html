@@ -24,92 +24,166 @@
             }
         }
     </script>
-</head>
-<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans">
-    <!-- Starry Background -->
-    <div class="stars fixed inset-0 pointer-events-none" id="stars"></div>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    <div class="relative z-10 container max-w-4xl mx-auto px-4 py-8">
+        .loading::after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80% { content: '...'; }
+        }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(26, 26, 36, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
         <!-- Header -->
-        <header class="text-center mb-12">
+        <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold text-primary mb-2 drop-shadow-[0_0_10px_rgba(0,255,242,0.3)]">
                 MoonBag
             </h1>
-            <p class="text-gray-400 text-lg">Know your numbers: Calculate what it really takes to moon</p>
+            <p class="text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
         </header>
 
-        <!-- Multi-step Container -->
-        <div class="space-y-8">
-            <!-- Step 1: Crypto Selection -->
-            <section id="step-1" class="fade-in">
-                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 1: Choose your coin</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="crypto-grid">
-                    <!-- Crypto cards will be inserted here -->
+        <!-- Section 1: Coin Selection -->
+        <section class="glass rounded-xl p-6 space-y-4">
+            <h2 class="text-xl font-semibold text-primary/80">Select Your Coin</h2>
+            
+            <!-- Crypto Selector -->
+            <div class="relative">
+                <button id="crypto-selector" 
+                        class="w-full p-3 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all">
+                    <img id="selected-crypto-icon" src="" alt="" class="w-6 h-6 rounded-full hidden">
+                    <span id="selected-crypto-text">Select a cryptocurrency</span>
+                </button>
+
+                <!-- Dropdown -->
+                <div id="crypto-options" class="absolute mt-2 w-full bg-card rounded-lg shadow-lg hidden z-50 glass">
+                    <input type="text" id="crypto-search" 
+                           placeholder="Search cryptocurrencies..." 
+                           class="w-full p-3 bg-input/50 border-b border-white/10 rounded-t-lg">
+                    <div id="crypto-list" class="max-h-64 overflow-y-auto"></div>
                 </div>
-            </section>
+            </div>
 
-            <!-- Step 2: Calculation Method -->
-            <section id="step-2" class="hidden fade-in">
-                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 2: Select calculation method</h2>
-                <div class="bg-card/50 backdrop-blur-xl rounded-xl p-1">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <button class="method-btn active" data-mode="profit">
-                            <span class="text-lg font-medium">Profit Target</span>
-                            <span class="text-sm text-gray-400">Calculate required price for profit goal</span>
-                        </button>
-                        <button class="method-btn" data-mode="price">
-                            <span class="text-lg font-medium">Price Target</span>
-                            <span class="text-sm text-gray-400">Find profit at target price</span>
-                        </button>
-                        <button class="method-btn" data-mode="holdings">
-                            <span class="text-lg font-medium">Holdings Target</span>
-                            <span class="text-sm text-gray-400">Calculate required position size</span>
-                        </button>
+            <!-- Live Price Display -->
+            <div class="bg-input/30 rounded-lg p-4 flex justify-between items-center">
+                <span class="text-gray-400">Live Price:</span>
+                <span id="live-price" class="text-xl font-semibold text-primary">Loading...</span>
+            </div>
+        </section>
+
+        <!-- Section 2: Strategy Selection -->
+        <section class="glass rounded-xl p-6 space-y-4">
+            <h2 class="text-xl font-semibold text-primary/80">Select Your Strategy</h2>
+            
+            <!-- Strategy Toggle Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button class="strategy-btn active" data-strategy="profit">
+                    <span class="text-lg">Profit Target</span>
+                    <span class="text-sm text-gray-400">Calculate required price for profit</span>
+                </button>
+                <button class="strategy-btn" data-strategy="price">
+                    <span class="text-lg">Price Target</span>
+                    <span class="text-sm text-gray-400">Find profit at target price</span>
+                </button>
+                <button class="strategy-btn" data-strategy="holdings">
+                    <span class="text-lg">Holdings Target</span>
+                    <span class="text-sm text-gray-400">Calculate required position</span>
+                </button>
+            </div>
+
+            <!-- Input Fields -->
+            <div class="space-y-4 mt-6">
+                <!-- Common Input -->
+                <div class="input-group">
+                    <label class="block text-sm text-gray-400 mb-1">Initial Investment ($)</label>
+                    <input type="text" id="investment" 
+                           class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                           placeholder="Enter amount">
+                </div>
+
+                <!-- Strategy Specific Inputs -->
+                <div id="profit-inputs" class="space-y-4">
+                    <div class="input-group">
+                        <label class="block text-sm text-gray-400 mb-1">Target Profit ($)</label>
+                        <input type="text" id="profit-target"
+                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                               placeholder="Enter target profit">
                     </div>
                 </div>
-            </section>
 
-            <!-- Step 3: Calculator -->
-            <section id="step-3" class="hidden fade-in">
-                <h2 class="text-xl font-semibold mb-4 text-primary/80">Step 3: Enter your numbers</h2>
-                <div class="bg-card/80 backdrop-blur-xl rounded-xl p-6 shadow-lg border border-white/10">
-                    <!-- Investment Input -->
-                    <div class="mb-6">
-                        <label class="text-sm uppercase text-gray-400 mb-1 block">Initial Investment ($)</label>
-                        <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal"
-                               class="w-full px-4 py-3 rounded-lg bg-input/50 border border-input text-white 
-                                      focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"/>
+                <div id="price-inputs" class="space-y-4 hidden">
+                    <div class="input-group">
+                        <label class="block text-sm text-gray-400 mb-1">Target Price ($)</label>
+                        <input type="text" id="price-target"
+                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                               placeholder="Enter target price">
                     </div>
-
-                    <!-- Dynamic Input Sections -->
-                    <div id="profit-inputs" class="space-y-6">
-                        <!-- Profit target inputs -->
-                    </div>
-                    <div id="price-inputs" class="hidden space-y-6">
-                        <!-- Price target inputs -->
-                    </div>
-                    <div id="holdings-inputs" class="hidden space-y-6">
-                        <!-- Holdings target inputs -->
-                    </div>
-
-                    <!-- Calculate Button -->
-                    <button id="calculate-btn" 
-                            class="w-full mt-6 px-6 py-4 bg-primary text-dark font-semibold rounded-lg
-                                   hover:bg-primary/90 transform hover:-translate-y-0.5 transition-all
-                                   focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        Calculate Results
-                    </button>
                 </div>
-            </section>
 
-            <!-- Results Section -->
-            <section id="results" class="hidden fade-in">
-                <h2 class="text-xl font-semibold mb-4 text-primary/80">Your Results</h2>
-                <div class="bg-card/80 backdrop-blur-xl rounded-xl p-6 shadow-lg border border-white/10 space-y-4">
-                    <!-- Results content -->
+                <div id="holdings-inputs" class="space-y-4 hidden">
+                    <div class="input-group">
+                        <label class="block text-sm text-gray-400 mb-1">Target Balance ($)</label>
+                        <input type="text" id="balance-target"
+                               class="w-full p-3 bg-input rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                               placeholder="Enter target balance">
+                    </div>
                 </div>
-            </section>
-        </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Results -->
+        <section class="glass rounded-xl p-6 space-y-4">
+            <h2 class="text-xl font-semibold text-primary/80">Results</h2>
+            
+            <div id="result" class="space-y-4">
+                <div class="bg-input/30 rounded-lg p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="current-price">
+                            <span class="text-gray-400">Current Price:</span>
+                            <span id="current-price" class="block text-xl font-semibold">$0.00</span>
+                        </div>
+                        <div class="required-price">
+                            <span class="text-gray-400">Required Price:</span>
+                            <span id="required-price" class="block text-xl font-semibold text-primary">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-input/30 rounded-lg p-4">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="return-needed">
+                            <span class="text-gray-400">Return Needed:</span>
+                            <span id="return-needed" class="block text-xl font-semibold text-secondary">0%</span>
+                        </div>
+                        <div class="required-holdings hidden">
+                            <span class="text-gray-400">Required Holdings:</span>
+                            <div id="required-holdings" class="text-xl font-semibold text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 </body>
 </html>

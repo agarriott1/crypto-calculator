@@ -43,29 +43,26 @@ const cryptoList = document.getElementById('crypto-list');
 const selectedCryptoIcon = document.getElementById('selected-crypto-icon');
 const selectedCryptoText = document.getElementById('selected-crypto-text');
 
-// Event Listeners
-toggleBtns.forEach(btn => {
+// Strategy buttons
+document.querySelectorAll('.strategy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        toggleBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        // Remove active class from all buttons
+        document.querySelectorAll('.strategy-btn').forEach(b => 
+            b.classList.remove('active', 'bg-primary/20', 'text-primary'));
         
-        // Hide all input sections first
-        profitInputs.classList.add('hidden');
-        priceInputs.classList.add('hidden');
-        document.getElementById('holdings-inputs').classList.add('hidden');
+        // Add active class to clicked button
+        btn.classList.add('active', 'bg-primary/20', 'text-primary');
         
-        // Show selected section
-        switch(btn.dataset.mode) {
-            case 'profit':
-                profitInputs.classList.remove('hidden');
-                break;
-            case 'price':
-                priceInputs.classList.remove('hidden');
-                break;
-            case 'holdings':
-                document.getElementById('holdings-inputs').classList.remove('hidden');
-                break;
-        }
+        // Hide all input sections
+        document.querySelectorAll('#profit-inputs, #price-inputs, #holdings-inputs')
+            .forEach(el => el.classList.add('hidden'));
+        
+        // Show selected input section
+        const strategy = btn.dataset.strategy;
+        document.getElementById(`${strategy}-inputs`).classList.remove('hidden');
+        
+        // Update calculations
+        calculateResults();
     });
 });
 
@@ -104,14 +101,19 @@ const numberInputs = [
 ];
 
 numberInputs.forEach(input => {
-    // Format while typing
-    input.addEventListener('input', (e) => {
-        formatNumberInput(e.target);
-    });
+    if (input) {
+        input.addEventListener('input', (e) => {
+            formatNumberInput(e.target);
+            calculateResults();
+        });
+    }
 });
 
 async function updatePrice() {
     try {
+        livePrice.textContent = 'Fetching price...';
+        livePrice.classList.add('loading');
+
         const response = await fetch(`${CRYPTO_API_URL}?ids=${selectedCryptoId}&vs_currencies=usd`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -119,52 +121,21 @@ async function updatePrice() {
     const data = await response.json();
         currentPrice = data[selectedCryptoId].usd;
         
-        // Format price with commas and handle decimal places
+        // Format price with commas
         const formattedPrice = currentPrice >= 1 
             ? currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : currentPrice.toFixed(8);
-            
-        livePrice.textContent = `$${formattedPrice}`;
-        currentPriceElement.value = currentPrice;
         
-        // Show the result elements that might be hidden
-        document.querySelector('.required-price').classList.remove('hidden');
-        document.querySelector('.return-needed').classList.remove('hidden');
+        livePrice.textContent = `$${formattedPrice}`;
+        currentPriceElement.textContent = `$${formattedPrice}`;
         
         // Recalculate results with new price
         calculateResults();
     } catch (error) {
         console.error('Error fetching price:', error);
         livePrice.textContent = 'Error loading price';
-    }
-}
-
-function calculateHoldingsTarget() {
-    const startingBalance = getNumericValue(investmentInput);
-    const targetBalance = getNumericValue(balanceTarget);
-
-    if (startingBalance && targetBalance && currentPrice) {
-        // Calculate current holdings from starting balance
-        const currentHoldings = startingBalance / currentPrice;
-        
-        // Calculate required price to reach target balance with current holdings
-        const requiredPrice = targetBalance / currentHoldings;
-        
-        // Calculate percentage increase needed
-        const priceIncrease = ((requiredPrice / currentPrice) - 1) * 100;
-        
-        // Format the results
-        const formattedHoldings = formatCoinAmount(currentHoldings, getCoinSymbol(selectedCryptoId));
-        
-        requiredHoldings.innerHTML = `
-            <div class="holdings-detail">
-                <div>Current Holdings: ${formattedHoldings}</div>
-                <div>Current Value: $${startingBalance.toLocaleString()}</div>
-                <div>Required Price: $${requiredPrice.toLocaleString()}</div>
-                <div>Price Increase Needed: ${priceIncrease.toFixed(2)}%</div>
-                <div>Target Value: $${targetBalance.toLocaleString()}</div>
-            </div>
-        `;
+    } finally {
+        livePrice.classList.remove('loading');
     }
 }
 
@@ -174,66 +145,49 @@ function calculateResults() {
     const targetPrice = getNumericValue(priceTarget);
     const targetBalance = getNumericValue(balanceTarget);
 
-    // Get coin data from cache
-    const selectedCoin = coinCache.data.find(coin => coin.id === selectedCryptoId);
-    const coinSymbol = selectedCoin ? selectedCoin.symbol.toUpperCase() : '';
+    if (!investment || !currentPrice) return;
 
-    // Calculate coins/units
     const coins = investment / currentPrice;
+    const activeStrategy = document.querySelector('.strategy-btn.active').dataset.strategy;
 
-    // Update or add the units display in the results div
-    const resultDiv = document.getElementById('result');
-    let unitsDiv = resultDiv.querySelector('.current-units');
-    
-    if (!unitsDiv) {
-        unitsDiv = document.createElement('div');
-        unitsDiv.className = 'current-units';
-        // Insert after current price
-        resultDiv.querySelector('.current-price').after(unitsDiv);
-    }
+    switch(activeStrategy) {
+        case 'profit':
+            if (profit) {
+                const targetValue = investment + profit;
+                const requiredPriceValue = targetValue / coins;
+                const returnPct = (profit / investment) * 100;
+                
+                requiredPrice.textContent = `$${requiredPriceValue.toLocaleString(undefined, 
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                returnNeeded.textContent = `${returnPct.toFixed(2)}%`;
+            }
+            break;
 
-    if (investment && currentPrice) {
-        unitsDiv.innerHTML = `
-            <span>Units (${coinSymbol}):</span>
-            <span>${formatCoinAmount(coins, coinSymbol)}</span>
-        `;
-        unitsDiv.classList.remove('hidden');
-    } else {
-        unitsDiv.classList.add('hidden');
-    }
+        case 'price':
+            if (targetPrice) {
+                const finalValue = coins * targetPrice;
+                const profitAmount = finalValue - investment;
+                const returnPct = (profitAmount / investment) * 100;
+                
+                requiredPrice.textContent = `$${targetPrice.toLocaleString()}`;
+                returnNeeded.textContent = `${returnPct.toFixed(2)}% (Profit: $${profitAmount.toLocaleString()})`;
+            }
+            break;
 
-    if (currentPrice) {
-        const activeMode = document.querySelector('.toggle-btn.active').dataset.mode;
-
-        switch(activeMode) {
-            case 'holdings':
-                if (targetBalance) {
-                    document.querySelector('.required-holdings').classList.remove('hidden');
-                    calculateHoldingsTarget();
-                }
-                break;
-            case 'price':
-                if (investment && targetPrice) {
-                    const potentialValue = coins * targetPrice;
-                    const profitAmount = potentialValue - investment;
-                    const returnPct = ((potentialValue / investment) - 1) * 100;
-                    
-                    requiredPrice.textContent = `$${targetPrice.toLocaleString()}`;
-                    returnNeeded.textContent = `${returnPct.toFixed(2)}% (Profit: $${profitAmount.toLocaleString()})`;
-                }
-                break;
-            case 'profit':
-                if (investment && profit) {
-                    const targetValue = investment + profit;
-                    const requiredPriceValue = targetValue / coins;
-                    const returnPct = (profit / investment) * 100;
-                    
-                    requiredPrice.textContent = `$${requiredPriceValue.toLocaleString()}`;
-                    returnNeeded.textContent = `${returnPct.toFixed(2)}%`;
-                    returnPercentage.value = returnPct.toFixed(2);
-                }
-                break;
-        }
+        case 'holdings':
+            if (targetBalance) {
+                document.querySelector('.required-holdings').classList.remove('hidden');
+                const requiredCoins = targetBalance / currentPrice;
+                const currentCoins = investment / currentPrice;
+                const additionalCoins = requiredCoins - currentCoins;
+                
+                requiredHoldings.innerHTML = `
+                    Current: ${currentCoins.toFixed(8)} coins<br>
+                    Required: ${requiredCoins.toFixed(8)} coins<br>
+                    Additional needed: ${additionalCoins.toFixed(8)} coins
+                `;
+            }
+            break;
     }
 }
 
@@ -370,90 +324,20 @@ function updateDropdown(searchTerm = '') {
 // Update the initializeCustomSelect function
 async function initializeCustomSelect() {
     try {
-        // Show loading state
-        selectedCryptoText.textContent = 'Loading cryptocurrencies...';
-        cryptoSelector.disabled = true;
-
-        // Event Listeners
-        // Toggle dropdown on selector click
-        cryptoSelector.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            
-            // If we haven't loaded data yet, load it
-            if (coinCache.data.length === 0) {
-                try {
-                    await fetchCryptoData();
-                } catch (error) {
-                    console.error('Error fetching crypto data:', error);
-        return;
-                }
-            }
-            
-            cryptoOptions.classList.toggle('hidden');
-            if (!cryptoOptions.classList.contains('hidden')) {
-                cryptoSearch.focus();
-                updateDropdown('');
-            }
-        });
-
-        // Handle search input
-        cryptoSearch.addEventListener('input', (e) => {
-            updateDropdown(e.target.value);
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!cryptoOptions.contains(e.target) && e.target !== cryptoSelector) {
-                cryptoOptions.classList.add('hidden');
-            }
-        });
-
-        // Handle crypto selection
-        cryptoList.addEventListener('click', (e) => {
-            const option = e.target.closest('.crypto-option');
-            if (option) {
-                const selectedId = option.dataset.value;
-                const selectedCoin = coinCache.data.find(coin => coin.id === selectedId);
-                
-                if (selectedCoin) {
-                    // Update the selector button
-                    selectedCryptoText.textContent = `${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()})`;
-                    selectedCryptoIcon.src = selectedCoin.image;
-                    selectedCryptoIcon.classList.remove('hidden');
-                    
-                    // Close dropdown
-                    cryptoOptions.classList.add('hidden');
-                    
-                    // Update selected crypto and trigger price update
-                    selectedCryptoId = selectedId;
-                    updatePrice();
-                }
-            }
-        });
-
-        // Initial data fetch
-        fetchCryptoData().then(data => {
-            selectedCryptoText.textContent = 'Select a cryptocurrency';
-            cryptoSelector.disabled = false;
-            
-            // Set initial selection to Bitcoin
-            const bitcoin = data.find(coin => coin.id === 'bitcoin');
-            if (bitcoin) {
-                selectedCryptoText.textContent = `${bitcoin.name} (${bitcoin.symbol.toUpperCase()})`;
-                selectedCryptoIcon.src = bitcoin.image;
-                selectedCryptoIcon.classList.remove('hidden');
-                updatePrice();
-            }
-        }).catch(error => {
-            console.error('Error initializing dropdown:', error);
-            selectedCryptoText.textContent = 'Error loading cryptocurrencies';
-            cryptoSelector.disabled = false;
-        });
-
+        const data = await fetchCryptoData();
+        updateDropdown();
+        
+        // Set initial selection to Bitcoin
+        const bitcoin = data.find(coin => coin.id === 'bitcoin');
+        if (bitcoin) {
+            selectedCryptoText.textContent = `${bitcoin.name} (${bitcoin.symbol.toUpperCase()})`;
+            selectedCryptoIcon.src = bitcoin.image;
+            selectedCryptoIcon.classList.remove('hidden');
+            selectedCryptoId = bitcoin.id;
+            updatePrice();
+        }
     } catch (error) {
-        console.error('Error in initializeCustomSelect:', error);
-        selectedCryptoText.textContent = 'Error loading cryptocurrencies';
-        cryptoSelector.disabled = false;
+        console.error('Error initializing dropdown:', error);
     }
 }
 
@@ -605,3 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMultiStep();
     initStarryBackground();
 });
+
+// Update price every 30 seconds
+setInterval(updatePrice, 30000);
