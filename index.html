@@ -1,100 +1,125 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoonBag | Crypto Calculator</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Add modern font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Add icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#00fff2',
+              dark: '#0a0a0f',
+              card: '#1a1a24',
+              input: '#2d2d3d',
+              hover: '#00cccc',
+            }
+          }
+        }
+      }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-chart-line"></i> MoonBag</h1>
-            <p class="subtitle">Know your numbers: Calculate what it really takes to moon</p>
-        </header>
+<body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-inter">
+  <div class="max-w-2xl mx-auto px-4 py-8">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-primary mb-2 drop-shadow-lg"><i class="fas fa-rocket"></i> MoonBag</h1>
+      <p class="text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
+    </header>
 
-        <div class="calculator-card">
-            <div class="input-group">
-                <label>Initial Investment ($)</label>
-                <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal" pattern="[0-9,]*">
-            </div>
-
-            <div class="input-group">
-                <label>Select Cryptocurrency</label>
-                <select id="crypto">
-                    <option value="bitcoin">Bitcoin (BTC)</option>
-                    <option value="ethereum">Ethereum (ETH)</option>
-                    <option value="dogecoin">Dogecoin (DOGE)</option>
-                    <option value="solana">Solana (SOL)</option>
-                </select>
-            </div>
-
-            <div class="toggle-container">
-                <button class="toggle-btn active" data-mode="profit">Profit Target</button>
-                <button class="toggle-btn" data-mode="price">Price Target</button>
-                <button class="toggle-btn" data-mode="holdings">Holdings Target</button>
-            </div>
-
-            <div id="profit-inputs" class="input-section">
-                <div class="input-group">
-                    <label>Target Profit ($)</label>
-                    <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal" pattern="[0-9,]*">
-                </div>
-                <div class="input-group">
-                    <label>Required Return (%)</label>
-                    <input type="number" id="return-percentage" readonly>
-                </div>
-            </div>
-
-            <div id="price-inputs" class="input-section hidden">
-                <div class="input-group">
-                    <label>Target Price ($)</label>
-                    <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal" pattern="[0-9,]*">
-                </div>
-                <div class="input-group">
-                    <label>Current Price ($)</label>
-                    <input type="number" id="current-price" readonly>
-                </div>
-            </div>
-
-            <div id="holdings-inputs" class="input-section hidden">
-                <div class="input-group">
-                    <label>Target Balance ($)</label>
-                    <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal" pattern="[0-9,]*">
-                </div>
-                <div class="input-group">
-                    <label>Current Price ($)</label>
-                    <input type="number" id="holdings-current-price" readonly>
-                </div>
-            </div>
-
-            <button id="calculate-btn" class="calculate-btn">Calculate <i class="fas fa-calculator"></i></button>
-
-            <div class="result" id="result">
-                <div class="current-price">
-                    <span>Current Price:</span>
-                    <span id="live-price">Loading...</span>
-                </div>
-                <div class="required-price hidden">
-                    <span>Required Price:</span>
-                    <span id="required-price">-</span>
-                </div>
-                <div class="return-needed hidden">
-                    <span>Return Needed:</span>
-                    <span id="return-needed">-</span>
-                </div>
-                <div class="required-holdings hidden">
-                    <span>Required Holdings:</span>
-                    <span id="required-holdings">-</span>
-                </div>
-            </div>
+    <div class="bg-card rounded-2xl p-6 shadow-xl backdrop-blur-md border border-white/10">
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm uppercase text-gray-400 mb-1 block">Initial Investment ($)</label>
+          <input type="text" id="investment" placeholder="Enter amount" inputmode="decimal"
+            class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary"/>
         </div>
-    </div>
 
-    <script src="script.js"></script>
+        <div>
+          <label class="text-sm uppercase text-gray-400 mb-1 block">Select Cryptocurrency</label>
+          <select id="crypto" class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="bitcoin">Bitcoin (BTC)</option>
+            <option value="ethereum">Ethereum (ETH)</option>
+            <option value="dogecoin">Dogecoin (DOGE)</option>
+            <option value="solana">Solana (SOL)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-input rounded-lg p-2">
+          <button class="toggle-btn active px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-dark" data-mode="profit">Profit Target</button>
+          <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-hover" data-mode="price">Price Target</button>
+          <button class="toggle-btn px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-hover" data-mode="holdings">Holdings Target</button>
+        </div>
+
+        <div id="profit-inputs">
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Profit ($)</label>
+            <input type="text" id="profit-target" placeholder="Enter target profit" inputmode="decimal"
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white focus:outline-none focus:ring-2 focus:ring-primary"/>
+          </div>
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Required Return (%)</label>
+            <input type="number" id="return-percentage" readonly
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+          </div>
+        </div>
+
+        <div id="price-inputs" class="hidden">
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Price ($)</label>
+            <input type="text" id="price-target" placeholder="Enter target price" inputmode="decimal"
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
+          </div>
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
+            <input type="number" id="current-price" readonly
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+          </div>
+        </div>
+
+        <div id="holdings-inputs" class="hidden">
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Target Balance ($)</label>
+            <input type="text" id="balance-target" placeholder="Enter target balance" inputmode="decimal"
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white"/>
+          </div>
+          <div class="mt-4">
+            <label class="text-sm uppercase text-gray-400 mb-1 block">Current Price ($)</label>
+            <input type="number" id="holdings-current-price" readonly
+              class="w-full px-4 py-3 rounded-lg bg-input border border-input text-white cursor-not-allowed"/>
+          </div>
+        </div>
+
+        <button id="calculate-btn" class="w-full mt-6 py-3 rounded-lg bg-primary text-dark text-lg font-semibold uppercase tracking-wide hover:bg-hover">
+          Calculate <i class="fas fa-calculator"></i>
+        </button>
+
+        <div class="mt-6 space-y-3" id="result">
+          <div class="flex justify-between text-sm text-gray-400">
+            <span>Current Price:</span>
+            <span id="live-price" class="text-primary">Loading...</span>
+          </div>
+          <div class="flex justify-between text-sm hidden" id="required-price-container">
+            <span>Required Price:</span>
+            <span id="required-price" class="text-primary">-</span>
+          </div>
+          <div class="flex justify-between text-sm hidden" id="return-needed-container">
+            <span>Return Needed:</span>
+            <span id="return-needed" class="text-primary">-</span>
+          </div>
+          <div class="flex justify-between text-sm hidden" id="required-holdings-container">
+            <span>Required Holdings:</span>
+            <span id="required-holdings" class="text-primary">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
