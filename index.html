@@ -52,6 +52,30 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: twinkle 4s infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans p-4 md:p-8">
@@ -71,17 +95,22 @@
             <!-- Crypto Selector -->
             <div class="relative">
                 <button id="crypto-selector" 
-                        class="w-full p-3 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all">
+                        class="w-full p-4 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all">
                     <img id="selected-crypto-icon" src="" alt="" class="w-6 h-6 rounded-full hidden">
                     <span id="selected-crypto-text">Select a cryptocurrency</span>
+                    <svg class="w-5 h-5 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
                 </button>
 
                 <!-- Dropdown -->
                 <div id="crypto-options" class="absolute mt-2 w-full bg-card rounded-lg shadow-lg hidden z-50 glass">
                     <input type="text" id="crypto-search" 
                            placeholder="Search cryptocurrencies..." 
-                           class="w-full p-3 bg-input/50 border-b border-white/10 rounded-t-lg">
-                    <div id="crypto-list" class="max-h-64 overflow-y-auto"></div>
+                           class="w-full p-4 bg-input/50 border-b border-white/10 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <div id="crypto-list" class="max-h-96 overflow-y-auto py-2">
+                        <!-- Crypto options will be populated here -->
+                    </div>
                 </div>
             </div>
 
