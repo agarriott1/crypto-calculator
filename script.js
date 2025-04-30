@@ -20,15 +20,26 @@ const resultsContent = document.getElementById('resultsContent');
 const inputFields = document.getElementById('inputFields');
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initializeStarryBackground();
-    fetchCryptoData().then(() => {
-        // Pre-select Bitcoin after data is fetched
-        const bitcoinId = 'bitcoin';
-        handleCryptoSelection(bitcoinId);
-        document.getElementById('cryptoSearch').value = 'Bitcoin';
-    });
-    setupEventListeners();
+    try {
+        const response = await fetch(COINGECKO_MARKETS_URL + QUERY_PARAMS);
+        cryptoList = await response.json();
+        renderCryptoDropdown(cryptoList);
+        
+        // Pre-select Bitcoin
+        const bitcoin = cryptoList.find(coin => coin.id === 'bitcoin');
+        if (bitcoin) {
+            selectedCrypto = bitcoin;
+            document.getElementById('cryptoSearch').value = 'Bitcoin';
+            handleCryptoSelection('bitcoin');
+        }
+        
+        setupStrategyButtons();
+        setupEventListeners();
+    } catch (error) {
+        console.error('Error initializing app:', error);
+    }
 });
 
 // Create starry background
@@ -59,22 +70,39 @@ async function fetchCryptoData() {
 }
 
 // Render crypto grid
-function renderCryptoDropdown(coins) {
-    const dropdown = document.getElementById('cryptoDropdown');
-    dropdown.innerHTML = coins.map(coin => `
-        <div class="crypto-option p-3 hover:bg-gray-700 cursor-pointer" data-id="${coin.id}">
-            <div class="flex items-center space-x-3">
-                <img src="${coin.image}" alt="${coin.name}" class="w-6 h-6">
-                <div class="flex-1">
-                    <h3 class="font-medium">${coin.name}</h3>
-                    <p class="text-sm text-gray-400">${coin.symbol.toUpperCase()}</p>
-                </div>
-                <div class="text-right">
-                    <p class="font-medium">$${formatNumber(coin.current_price)}</p>
+function renderCryptoDropdown(cryptoList) {
+    const dropdownContent = document.getElementById('cryptoDropdown');
+    dropdownContent.innerHTML = '';
+    
+    cryptoList.forEach(crypto => {
+        const option = document.createElement('div');
+        option.className = 'crypto-option p-3 cursor-pointer flex items-center justify-between hover:bg-opacity-10';
+        option.dataset.id = crypto.id;
+        option.innerHTML = `
+            <div class="flex items-center gap-3">
+                <img src="${crypto.image}" alt="${crypto.name}" class="w-8 h-8">
+                <div>
+                    <div class="font-semibold">${crypto.name}</div>
+                    <div class="text-sm text-gray-400">${crypto.symbol.toUpperCase()}</div>
                 </div>
             </div>
-        </div>
-    `).join('');
+            <div class="text-right">
+                <div class="font-mono">$${formatNumber(crypto.current_price)}</div>
+                <div class="text-sm ${crypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}">
+                    ${crypto.price_change_percentage_24h.toFixed(2)}%
+                </div>
+            </div>
+        `;
+        
+        option.addEventListener('click', () => {
+            selectedCrypto = crypto;
+            handleCryptoSelection(crypto.id);
+            dropdownContent.classList.add('hidden');
+            document.getElementById('cryptoSearch').value = crypto.name;
+        });
+        
+        dropdownContent.appendChild(option);
+    });
 }
 
 // Setup event listeners
@@ -149,42 +177,65 @@ function setupInputFields(strategy) {
     
     const fields = {
         profit: `
-            <div class="space-y-4">
+            <div class="space-y-6">
                 <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
-                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
+                    <h3 class="text-xl text-gray-300 mb-2">INVESTMENT AMOUNT ($)</h3>
+                    <div class="relative">
+                        <input type="text" 
+                            id="investmentAmount" 
+                            class="w-full bg-[#1a1a2e] border border-gray-700/50 rounded-lg px-4 py-3 font-mono text-xl" 
+                            placeholder="0.00"
+                            onkeyup="this.value = formatInputNumber(this.value)"
+                            onblur="this.value = formatInputNumber(this.value)">
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">Enter the amount you want to invest</div>
                 </div>
                 <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Profit Target ($)</label>
-                    <input type="number" id="profitTarget" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target profit">
+                    <h3 class="text-xl text-gray-300 mb-2">PROFIT TARGET ($)</h3>
+                    <div class="relative">
+                        <input type="text" 
+                            id="profitTarget" 
+                            class="w-full bg-[#1a1a2e] border border-gray-700/50 rounded-lg px-4 py-3 font-mono text-xl" 
+                            placeholder="0.00"
+                            onkeyup="this.value = formatInputNumber(this.value)"
+                            onblur="this.value = formatInputNumber(this.value)">
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">Enter your desired profit</div>
                 </div>
-                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
+                <button id="calculateBtn" class="calculate-btn w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 py-3 rounded-lg transition-all duration-200 mt-6">
+                    Calculate
+                </button>
             </div>
         `,
         price: `
-            <div class="space-y-4">
+            <div class="space-y-6">
                 <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
-                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
+                    <h3 class="text-xl text-gray-300 mb-2">INVESTMENT AMOUNT ($)</h3>
+                    <div class="relative">
+                        <input type="text" 
+                            id="investmentAmount" 
+                            class="w-full bg-[#1a1a2e] border border-gray-700/50 rounded-lg px-4 py-3 font-mono text-xl" 
+                            placeholder="0.00"
+                            onkeyup="this.value = formatInputNumber(this.value)"
+                            onblur="this.value = formatInputNumber(this.value)">
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">Enter the amount you want to invest</div>
                 </div>
                 <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Target Price ($)</label>
-                    <input type="number" id="targetPrice" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target price">
+                    <h3 class="text-xl text-gray-300 mb-2">TARGET PRICE ($)</h3>
+                    <div class="relative">
+                        <input type="text" 
+                            id="targetPrice" 
+                            class="w-full bg-[#1a1a2e] border border-gray-700/50 rounded-lg px-4 py-3 font-mono text-xl" 
+                            placeholder="0.00"
+                            onkeyup="this.value = formatInputNumber(this.value)"
+                            onblur="this.value = formatInputNumber(this.value)">
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">Enter your target price</div>
                 </div>
-                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
-            </div>
-        `,
-        holdings: `
-            <div class="space-y-4">
-                <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Investment Amount ($)</label>
-                    <input type="number" id="investmentAmount" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter amount">
-                </div>
-                <div class="input-group">
-                    <label class="block text-sm text-gray-400 mb-1">Target Balance ($)</label>
-                    <input type="number" id="targetBalance" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3" placeholder="Enter target balance">
-                </div>
-                <button id="calculateBtn" class="calculate-btn w-full">Calculate</button>
+                <button id="calculateBtn" class="calculate-btn w-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 py-3 rounded-lg transition-all duration-200 mt-6">
+                    Calculate
+                </button>
             </div>
         `
     };
@@ -199,9 +250,28 @@ function setupInputFields(strategy) {
     }
 }
 
+// Update the formatInputNumber function to handle the dollar sign
+function formatInputNumber(value) {
+    // Remove any non-digit characters except decimal point
+    value = value.replace(/[^\d.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = value.split('.');
+    if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Format the whole number part with commas
+    const numberParts = value.split('.');
+    numberParts[0] = numberParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    
+    // Add dollar sign and combine whole and decimal parts
+    return '$' + numberParts.join('.');
+}
+
 // Calculate results based on strategy
 function calculateResults() {
-    const investmentAmount = parseFloat(document.getElementById('investmentAmount').value);
+    const investmentAmount = parseFloat(document.getElementById('investmentAmount').value.replace(/[$,]/g, ''));
     if (!investmentAmount || isNaN(investmentAmount)) {
         alert('Please enter a valid investment amount');
         return;
@@ -213,7 +283,7 @@ function calculateResults() {
 
     switch (selectedStrategy) {
         case 'profit': {
-            const profitTarget = parseFloat(document.getElementById('profitTarget').value);
+            const profitTarget = parseFloat(document.getElementById('profitTarget').value.replace(/[$,]/g, ''));
             if (!profitTarget || isNaN(profitTarget)) {
                 alert('Please enter a valid profit target');
                 return;
@@ -223,18 +293,20 @@ function calculateResults() {
             const percentageIncrease = ((requiredPrice - currentPrice) / currentPrice) * 100;
 
             results = `
-                <div class="space-y-4">
-                    <div class="stat-box">
-                        <span class="stat-label">Required Price</span>
-                        <span class="stat-value">$${formatNumber(requiredPrice)}</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Price Increase Needed</span>
-                        <span class="stat-value">${percentageIncrease.toFixed(2)}%</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Your Holdings</span>
-                        <span class="stat-value">${formatNumber(initialCoins)} ${selectedCrypto.symbol.toUpperCase()}</span>
+                <div class="bg-[#1a1a2e] p-6 rounded-lg max-w-[600px] mx-auto">
+                    <div class="space-y-4">
+                        <div class="stat-box">
+                            <span class="stat-label">Required Price</span>
+                            <span class="stat-value">$${formatNumber(requiredPrice)}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Price Increase Needed</span>
+                            <span class="stat-value">${percentageIncrease.toFixed(2)}%</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Your Holdings</span>
+                            <span class="stat-value">${formatNumber(initialCoins)} ${selectedCrypto.symbol.toUpperCase()}</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -242,7 +314,7 @@ function calculateResults() {
         }
 
         case 'price': {
-            const targetPrice = parseFloat(document.getElementById('targetPrice').value);
+            const targetPrice = parseFloat(document.getElementById('targetPrice').value.replace(/[$,]/g, ''));
             if (!targetPrice || isNaN(targetPrice)) {
                 alert('Please enter a valid target price');
                 return;
@@ -252,42 +324,20 @@ function calculateResults() {
             const pricePercentageChange = ((targetPrice - currentPrice) / currentPrice) * 100;
 
             results = `
-                <div class="space-y-4">
-                    <div class="stat-box">
-                        <span class="stat-label">Potential Value</span>
-                        <span class="stat-value">$${formatNumber(potentialValue)}</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Potential Profit</span>
-                        <span class="stat-value">$${formatNumber(potentialProfit)}</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Price Percentage Change</span>
-                        <span class="stat-value">${pricePercentageChange.toFixed(2)}%</span>
-                    </div>
-                </div>
-            `;
-            break;
-        }
-
-        case 'holdings': {
-            const holdingsTargetBalance = parseFloat(document.getElementById('targetBalance').value);
-            if (!holdingsTargetBalance || isNaN(holdingsTargetBalance)) {
-                alert('Please enter a valid target balance');
-                return;
-            }
-            const requiredCoins = holdingsTargetBalance / currentPrice;
-            const additionalInvestment = (requiredCoins - initialCoins) * currentPrice;
-
-            results = `
-                <div class="space-y-4">
-                    <div class="stat-box">
-                        <span class="stat-label">Required Holdings</span>
-                        <span class="stat-value">${formatNumber(requiredCoins)} ${selectedCrypto.symbol.toUpperCase()}</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Additional Investment Needed</span>
-                        <span class="stat-value">$${formatNumber(additionalInvestment)}</span>
+                <div class="bg-[#1a1a2e] p-6 rounded-lg max-w-[600px] mx-auto">
+                    <div class="space-y-4">
+                        <div class="stat-box">
+                            <span class="stat-label">Potential Value</span>
+                            <span class="stat-value">$${formatNumber(potentialValue)}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Potential Profit</span>
+                            <span class="stat-value">$${formatNumber(potentialProfit)}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Price Percentage Change</span>
+                            <span class="stat-value">${pricePercentageChange.toFixed(2)}%</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -330,67 +380,170 @@ function goToStep(stepNumber) {
 
 // Helper functions
 function formatNumber(num) {
-    if (num >= 1) {
-        return num.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+    if (num >= 1e12) {
+        return (num / 1e12).toFixed(2) + 'T';
     }
-    return num.toFixed(8);
+    if (num >= 1e9) {
+        return (num / 1e9).toFixed(2) + 'B';
+    }
+    if (num >= 1e6) {
+        return (num / 1e6).toFixed(2) + 'M';
+    }
+    if (num >= 1e3) {
+        return (num / 1e3).toFixed(2) + 'K';
+    }
+    // For all other numbers, including small ones
+    return num.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }
 
 // Update the crypto selection handler
 function handleCryptoSelection(cryptoId) {
-    selectedCrypto = cryptoList.find(coin => coin.id === cryptoId);
+    selectedCrypto = cryptoList.find(coin => coin.id === cryptoId || coin.symbol.toLowerCase() === cryptoId.toLowerCase());
+    if (!selectedCrypto) return;
     
-    // Create Pokemon/MTG style card
-    const card = document.getElementById('cryptoCard');
-    card.innerHTML = `
+    const cardDisplay = document.getElementById('cryptoCard');
+    cardDisplay.innerHTML = `
         <div class="crypto-card-inner">
-            <!-- Card Frame -->
-            <div class="card-frame">
-                <!-- Card Header -->
-                <div class="card-header glass p-4 rounded-t-xl border-b border-gray-700">
-                    <div class="flex items-center justify-between">
+            <!-- Card Header -->
+            <div class="card-header">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
                         <h3 class="text-xl font-bold">${selectedCrypto.name}</h3>
-                        <span class="text-sm font-mono bg-gray-700 px-2 py-1 rounded">
+                        <span class="text-sm font-mono bg-gray-700/50 px-2 py-1 rounded">
                             ${selectedCrypto.symbol.toUpperCase()}
                         </span>
                     </div>
+                    <span class="text-sm font-mono bg-gray-700/50 px-2 py-1 rounded">
+                        Rank #${selectedCrypto.market_cap_rank}
+                    </span>
                 </div>
-                
-                <!-- Card Image -->
-                <div class="card-image p-6 bg-gradient-to-b from-gray-800 to-gray-900 flex justify-center items-center">
-                    <img src="${selectedCrypto.image}" alt="${selectedCrypto.name}" class="w-24 h-24">
+            </div>
+            
+            <!-- Card Image & Price Section -->
+            <div class="card-image-section">
+                <div class="card-icon">
+                    <img src="${selectedCrypto.image}" alt="${selectedCrypto.name}" class="w-full h-full object-contain">
                 </div>
-                
-                <!-- Card Stats -->
-                <div class="card-stats p-4 space-y-2 bg-gray-800 rounded-b-xl">
-                    <div class="stat-row flex justify-between items-center">
-                        <span class="text-gray-400">Rank</span>
-                        <span class="font-mono">#${selectedCrypto.market_cap_rank}</span>
+                <div class="card-price-info">
+                    <div class="text-2xl font-mono font-bold">$${formatNumber(selectedCrypto.current_price)}</div>
+                    <div class="text-sm ${selectedCrypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'} font-mono">
+                        ${selectedCrypto.price_change_percentage_24h >= 0 ? '↑' : '↓'} ${Math.abs(selectedCrypto.price_change_percentage_24h).toFixed(2)}%
                     </div>
-                    <div class="stat-row flex justify-between items-center">
-                        <span class="text-gray-400">Price</span>
-                        <span class="font-mono">$${formatNumber(selectedCrypto.current_price)}</span>
+                    <div class="price-change-grid">
+                        <div class="price-change-item">
+                            <div class="price-change-label">1H</div>
+                            <div class="price-change-value ${selectedCrypto.price_change_percentage_1h_in_currency >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${selectedCrypto.price_change_percentage_1h_in_currency?.toFixed(2) || '0.00'}%
+                            </div>
+                        </div>
+                        <div class="price-change-item">
+                            <div class="price-change-label">24H</div>
+                            <div class="price-change-value ${selectedCrypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${selectedCrypto.price_change_percentage_24h?.toFixed(2)}%
+                            </div>
+                        </div>
+                        <div class="price-change-item">
+                            <div class="price-change-label">7D</div>
+                            <div class="price-change-value ${selectedCrypto.price_change_percentage_7d_in_currency >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${selectedCrypto.price_change_percentage_7d_in_currency?.toFixed(2) || '0.00'}%
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-row flex justify-between items-center">
-                        <span class="text-gray-400">24h Change</span>
-                        <span class="font-mono ${selectedCrypto.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}">
-                            ${selectedCrypto.price_change_percentage_24h.toFixed(2)}%
-                        </span>
-                    </div>
-                    <div class="stat-row flex justify-between items-center">
-                        <span class="text-gray-400">Market Cap</span>
-                        <span class="font-mono">$${formatNumber(selectedCrypto.market_cap)}</span>
-                    </div>
-                    <div class="stat-row flex justify-between items-center">
-                        <span class="text-gray-400">Volume</span>
-                        <span class="font-mono">$${formatNumber(selectedCrypto.total_volume)}</span>
+                </div>
+            </div>
+            
+            <!-- Card Stats -->
+            <div class="card-stats">
+                <div class="stat-box">
+                    <div class="stat-label">Market Cap</div>
+                    <div class="stat-value">$${formatNumber(selectedCrypto.market_cap)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">24h Volume</div>
+                    <div class="stat-value">$${formatNumber(selectedCrypto.total_volume)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">24h High</div>
+                    <div class="stat-value">$${formatNumber(selectedCrypto.high_24h)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">24h Low</div>
+                    <div class="stat-value">$${formatNumber(selectedCrypto.low_24h)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Circulating Supply</div>
+                    <div class="stat-value">${formatNumber(selectedCrypto.circulating_supply)} ${selectedCrypto.symbol.toUpperCase()}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Max Supply</div>
+                    <div class="stat-value">${selectedCrypto.max_supply ? formatNumber(selectedCrypto.max_supply) : '∞'} ${selectedCrypto.symbol.toUpperCase()}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">All Time High</div>
+                    <div class="stat-value">$${formatNumber(selectedCrypto.ath)}</div>
+                    <div class="text-xs text-gray-500">${new Date(selectedCrypto.ath_date).toLocaleDateString()}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">ATH Change</div>
+                    <div class="stat-value ${selectedCrypto.ath_change_percentage >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        ${selectedCrypto.ath_change_percentage.toFixed(2)}%
                     </div>
                 </div>
             </div>
         </div>
     `;
-    card.classList.remove('hidden');
+    cardDisplay.classList.remove('hidden');
+}
+
+// Add click outside handler to close dropdown
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('cryptoDropdown');
+    const searchInput = document.getElementById('cryptoSearch');
+    
+    if (!dropdown.contains(e.target) && e.target !== searchInput) {
+        dropdown.classList.add('hidden');
+    }
+});
+
+// Update search input handler
+document.getElementById('cryptoSearch').addEventListener('click', () => {
+    const dropdown = document.getElementById('cryptoDropdown');
+    dropdown.classList.remove('hidden');
+});
+
+// Update the strategy buttons setup
+function setupStrategyButtons() {
+    const strategyContainer = document.querySelector('.strategy-grid');
+    const strategies = [
+        {
+            id: 'profit',
+            title: 'Profit Target',
+            description: 'Calculate price needed for desired profit'
+        },
+        {
+            id: 'price',
+            title: 'Price Target',
+            description: 'Calculate profit at target price'
+        }
+    ];
+    
+    strategyContainer.innerHTML = strategies.map(strategy => `
+        <div class="strategy-card" data-strategy="${strategy.id}">
+            <h3 class="strategy-title">${strategy.title}</h3>
+            <p class="strategy-description">${strategy.description}</p>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    document.querySelectorAll('.strategy-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            selectedStrategy = card.dataset.strategy;
+            setupInputFields(selectedStrategy);
+        });
+    });
 }

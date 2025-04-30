@@ -3,76 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoonBag - Smart Crypto Calculator</title>
+    <title>MoonBag Calculator</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="style.css" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-gray-900 text-white font-inter">
-    <!-- Stars Background -->
-    <div id="stars" class="fixed inset-0 z-0"></div>
-
-    <!-- Main Container -->
-    <div class="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Header -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                MoonBag
-            </h1>
-            <p class="text-lg text-gray-400">Know your numbers: Calculate what it really takes to moon</p>
-        </header>
-
-        <!-- Main Grid Layout -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Crypto Card Display (Left Column) -->
-            <section class="glass p-6 rounded-xl md:col-span-1 md:row-span-2">
-                <h2 class="step-title">Selected Crypto</h2>
-                <div class="relative mb-4">
-                    <input type="text" id="cryptoSearch" placeholder="Search cryptocurrencies..." 
-                           class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400">
-                    <div id="cryptoDropdown" class="hidden absolute w-full mt-2 max-h-60 overflow-y-auto bg-gray-800 rounded-lg border border-gray-700 z-50">
-                        <!-- Dropdown options will be inserted here -->
-                    </div>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div id="stars" class="fixed inset-0 overflow-hidden pointer-events-none"></div>
+    
+    <div class="main-grid">
+        <!-- Left Column: Crypto Selection -->
+        <section class="crypto-section">
+            <h2 class="text-2xl font-bold mb-4">
+                <span class="text-cyan-400 mr-2">|</span>Selected Crypto
+            </h2>
+            
+            <!-- Crypto Search -->
+            <div class="relative">
+                <input type="text" id="cryptoSearch" placeholder="Search cryptocurrency..." 
+                    class="w-full bg-gray-800/50 border border-white/10 rounded-lg px-4 py-3 mb-4">
+                <div id="cryptoDropdown" class="hidden absolute w-full bg-gray-800/95 border border-white/10 rounded-lg mt-1 max-h-96 overflow-y-auto z-50">
+                    <!-- Dropdown options will be populated here -->
                 </div>
-                <div id="cryptoCard" class="crypto-card-display hidden">
-                    <!-- Pokemon/MTG style card will be inserted here -->
-                </div>
-            </section>
+            </div>
+            
+            <!-- Crypto Card Display -->
+            <div id="cryptoCard" class="crypto-card-display">
+                <!-- Card content will be populated here -->
+            </div>
+        </section>
 
-            <!-- Strategy Selection Card (Top Right) -->
-            <section class="glass p-6 rounded-xl md:col-span-2">
-                <h2 class="step-title">Choose Strategy</h2>
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="strategy-buttons flex space-x-4">
-                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="profit">
-                            <h3 class="text-lg font-semibold">Profit Target</h3>
-                            <p class="text-sm text-gray-400">Calculate price needed for desired profit</p>
-                        </button>
-                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="price">
-                            <h3 class="text-lg font-semibold">Price Target</h3>
-                            <p class="text-sm text-gray-400">Calculate profit at target price</p>
-                        </button>
-                        <button class="strategy-btn glass px-6 py-4 rounded-xl flex-1" data-strategy="holdings">
-                            <h3 class="text-lg font-semibold">Holdings Target</h3>
-                            <p class="text-sm text-gray-400">Calculate coins needed for target balance</p>
-                        </button>
-                    </div>
-                    
-                    <!-- Strategy Input Fields Container -->
-                    <div id="strategyInputs" class="strategy-inputs mt-4 hidden">
-                        <!-- Input fields will be dynamically inserted here -->
-                    </div>
-                </div>
-            </section>
+        <!-- Right Column Top: Strategy Selection -->
+        <section class="strategy-section">
+            <h2 class="text-2xl font-bold mb-4">
+                <span class="text-cyan-400 mr-2">|</span>Choose Strategy
+            </h2>
+            <div class="strategy-grid">
+                <!-- Strategy cards will be populated here -->
+            </div>
+            <div id="strategyInputs" class="hidden space-y-4 mt-4">
+                <!-- Strategy inputs will be populated here -->
+            </div>
+        </section>
 
-            <!-- Results Section (Bottom Right) -->
-            <section class="glass p-6 rounded-xl md:col-span-2">
-                <h2 class="step-title">Results</h2>
-                <div id="resultsContent" class="space-y-4">
-                    <!-- Results will be dynamically inserted here -->
-                </div>
-            </section>
-        </div>
+        <!-- Right Column Bottom: Results -->
+        <section id="resultsSection" class="results-section hidden">
+            <h2 class="text-2xl font-bold mb-4">
+                <span class="text-cyan-400 mr-2">|</span>Results
+            </h2>
+            <div id="resultsContent" class="space-y-4">
+                <!-- Results will be populated here -->
+            </div>
+        </section>
     </div>
 
     <script src="script.js"></script>
