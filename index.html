@@ -76,6 +76,83 @@
             50% { opacity: 0.7; }
             100% { opacity: 0.3; }
         }
+
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .transform-style-preserve-3d {
+            transform-style: preserve-3d;
+        }
+
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        .crypto-card-wrapper:hover .crypto-card {
+            transform: rotateY(180deg);
+        }
+
+        /* Rarity-based card borders */
+        .rarity-border-legendary {
+            background: linear-gradient(45deg, #ffd700, #ff8c00, #ffd700);
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        .rarity-border-epic {
+            background: linear-gradient(45deg, #9400d3, #4b0082, #9400d3);
+            animation: borderGlow 4s ease-in-out infinite;
+        }
+
+        .rarity-border-rare {
+            background: linear-gradient(45deg, #0066ff, #00ffff, #0066ff);
+            animation: borderGlow 5s ease-in-out infinite;
+        }
+
+        /* Holographic effect */
+        .holographic-foil {
+            background: linear-gradient(
+                125deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.1) 25%,
+                rgba(255,255,255,0.2) 50%,
+                rgba(255,255,255,0.1) 75%,
+                rgba(255,255,255,0) 100%
+            );
+            background-size: 400% 400%;
+            animation: holographic 3s ease infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes holographic {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .stat-box {
+            @apply bg-black/20 rounded-xl p-3 flex flex-col;
+        }
+
+        .stat-label {
+            @apply text-sm text-gray-400;
+        }
+
+        .stat-value {
+            @apply font-medium text-white;
+        }
+
+        .achievement-badge {
+            @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-dark to-card min-h-screen text-white font-sans p-4 md:p-8">
@@ -92,39 +169,134 @@
         <section class="glass rounded-xl p-6 space-y-4">
             <h2 class="text-xl font-semibold text-primary/80">Select Your Coin</h2>
             
-            <!-- Crypto Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="crypto-grid">
-                <!-- Top coins will be displayed as cards -->
+            <!-- Search Bar -->
+            <div class="relative">
+                <input type="text" id="crypto-search" 
+                       placeholder="Search coins..." 
+                       class="w-full p-4 bg-input rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50">
             </div>
 
-            <!-- Crypto Selector -->
-            <div class="relative mt-4">
-                <button id="crypto-selector" 
-                        class="w-full p-4 bg-input rounded-lg flex items-center gap-3 hover:bg-input/80 transition-all border border-white/10">
-                    <img id="selected-crypto-icon" src="" alt="" class="w-6 h-6 rounded-full hidden">
-                    <span id="selected-crypto-text" class="flex-1 text-left">Select a cryptocurrency</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+            <!-- Crypto Grid -->
+            <div id="crypto-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+                <!-- Card Template -->
+                <div class="crypto-card-wrapper perspective-1000">
+                    <div class="crypto-card relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer">
+                        <!-- Front of Card -->
+                        <div class="card-front absolute w-full h-full backface-hidden">
+                            <div class="card-frame relative bg-gradient-to-br from-card/90 to-card rounded-2xl overflow-hidden">
+                                <!-- Holographic Effect -->
+                                <div class="holographic-foil absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                
+                                <!-- Rarity Border -->
+                                <div class="rarity-border absolute inset-0 rounded-2xl"></div>
+                                
+                                <!-- Card Number -->
+                                <div class="absolute top-2 right-2 text-xs font-mono text-primary/80">
+                                    ${coin.market_cap_rank}/250
+                                </div>
 
-                <!-- Dropdown -->
-                <div id="crypto-options" class="absolute mt-2 w-full bg-card rounded-lg shadow-lg hidden z-50 glass">
-                    <div class="p-2">
-                        <input type="text" id="crypto-search" 
-                               placeholder="Search cryptocurrencies..." 
-                               class="w-full p-3 bg-input/50 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    </div>
-                    <div id="crypto-list" class="max-h-96 overflow-y-auto">
-                        <!-- Crypto options will be populated here -->
+                                <!-- Main Content -->
+                                <div class="p-6 space-y-4 relative z-10">
+                                    <!-- Header with Rarity Badge -->
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <img src="${coin.image}" class="w-12 h-12 rounded-full ring-2 ring-primary/20">
+                                            <div>
+                                                <h3 class="text-xl font-bold text-white">${coin.symbol.toUpperCase()}</h3>
+                                                <p class="text-sm text-gray-400">${coin.name}</p>
+                                            </div>
+                                        </div>
+                                        <div class="rarity-badge">
+                                            ${getRarityBadge(coin.market_cap_rank)}
+                                        </div>
+                                    </div>
+
+                                    <!-- Price Chart -->
+                                    <div class="h-32 bg-black/20 rounded-xl p-2">
+                                        <canvas class="price-chart w-full h-full"></canvas>
+                                    </div>
+
+                                    <!-- Stats Grid -->
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="stat-box">
+                                            <span class="stat-label">Price</span>
+                                            <span class="stat-value">${formatPrice(coin.current_price)}</span>
+                                        </div>
+                                        <div class="stat-box">
+                                            <span class="stat-label">24h</span>
+                                            <span class="stat-value ${getChangeColor(coin.price_change_percentage_24h)}">
+                                                ${formatChange(coin.price_change_percentage_24h)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Achievement Badges -->
+                                    <div class="achievement-badges flex gap-2">
+                                        ${getAchievementBadges(coin)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Back of Card -->
+                        <div class="card-back absolute w-full h-full backface-hidden rotate-y-180">
+                            <div class="card-frame relative bg-gradient-to-br from-card/90 to-card rounded-2xl overflow-hidden p-6">
+                                <h3 class="text-lg font-bold text-primary mb-4">Detailed Stats</h3>
+                                
+                                <!-- Market Stats -->
+                                <div class="space-y-3">
+                                    <div class="stat-row">
+                                        <span class="text-gray-400">Market Cap</span>
+                                        <span class="text-white">${formatMarketCap(coin.market_cap)}</span>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="text-gray-400">Volume (24h)</span>
+                                        <span class="text-white">${formatVolume(coin.total_volume)}</span>
+                                    </div>
+                                    <div class="stat-row">
+                                        <span class="text-gray-400">Circulating Supply</span>
+                                        <span class="text-white">${formatSupply(coin.circulating_supply)}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Historical Milestones -->
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-semibold text-primary mb-2">Milestones</h4>
+                                    <div class="space-y-2">
+                                        <div class="milestone">
+                                            <span>ATH</span>
+                                            <span>${formatPrice(coin.ath)} (${formatDate(coin.ath_date)})</span>
+                                        </div>
+                                        <div class="milestone">
+                                            <span>Genesis</span>
+                                            <span>${formatDate(coin.genesis_date)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Links & Social -->
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-semibold text-primary mb-2">Resources</h4>
+                                    <div class="flex gap-2">
+                                        ${getSocialLinks(coin.links)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Live Price Display -->
-            <div class="bg-input/30 rounded-lg p-4 flex justify-between items-center">
-                <span class="text-gray-400">Live Price:</span>
-                <span id="live-price" class="text-xl font-semibold text-primary">Loading...</span>
+            <!-- Selected Coin Info -->
+            <div class="bg-input/30 rounded-lg p-4 space-y-2">
+                <div class="flex items-center gap-3">
+                    <img id="selected-crypto-icon" src="" alt="" class="w-8 h-8 rounded-full hidden">
+                    <span id="selected-crypto-text" class="text-lg font-medium">Select a cryptocurrency</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">Live Price:</span>
+                    <span id="live-price" class="text-xl font-semibold text-primary">$0.00</span>
+                </div>
             </div>
         </section>
 

@@ -1,21 +1,18 @@
-// API endpoint for crypto prices
-const CRYPTO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
+// API endpoints
 const COINGECKO_MARKETS_URL = 'https://api.coingecko.com/api/v3/coins/markets';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CRYPTO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
 
-// Store current crypto price and cache
-let currentPrice = 0;
+// Store current state
 let selectedCryptoId = 'bitcoin';
+let currentPrice = 0;
 let coinCache = {
     timestamp: 0,
     data: []
 };
 
 // DOM Elements
-const cryptoSelector = document.getElementById('crypto-selector');
-const cryptoOptions = document.getElementById('crypto-options');
+const cryptoGrid = document.getElementById('crypto-grid');
 const cryptoSearch = document.getElementById('crypto-search');
-const cryptoList = document.getElementById('crypto-list');
 const selectedCryptoIcon = document.getElementById('selected-crypto-icon');
 const selectedCryptoText = document.getElementById('selected-crypto-text');
 const livePrice = document.getElementById('live-price');
@@ -28,14 +25,9 @@ const priceTarget = document.getElementById('price-target');
 const balanceTarget = document.getElementById('balance-target');
 const requiredHoldings = document.getElementById('required-holdings');
 
-// Fetch and cache cryptocurrency data
+// Fetch top cryptocurrencies
 async function fetchCryptoData() {
     try {
-        const now = Date.now();
-        if (now - coinCache.timestamp < CACHE_DURATION) {
-            return coinCache.data;
-        }
-
         const params = new URLSearchParams({
             vs_currency: 'usd',
             order: 'market_cap_desc',
@@ -49,7 +41,7 @@ async function fetchCryptoData() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
-        coinCache = { timestamp: now, data: data };
+        coinCache = { timestamp: Date.now(), data: data };
         return data;
     } catch (error) {
         console.error('Error fetching cryptocurrency data:', error);
@@ -72,7 +64,7 @@ function updateDropdown(searchTerm = '') {
         coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    cryptoList.innerHTML = filteredCoins.map(coin => `
+    cryptoGrid.innerHTML = filteredCoins.map(coin => `
         <div class="crypto-option cursor-pointer p-3 hover:bg-input/50 transition-all flex items-center gap-3"
              data-value="${coin.id}">
             <img src="${coin.image}" alt="${coin.symbol}" class="w-6 h-6 rounded-full">
@@ -93,6 +85,7 @@ function updateDropdown(searchTerm = '') {
 // Helper functions
 function formatMarketCap(marketCap) {
     if (!marketCap) return 'N/A';
+    if (marketCap >= 1e12) return `$${(marketCap / 1e12).toFixed(2)}T`;
     if (marketCap >= 1e9) return `$${(marketCap / 1e9).toFixed(2)}B`;
     if (marketCap >= 1e6) return `$${(marketCap / 1e6).toFixed(2)}M`;
     return `$${marketCap.toLocaleString()}`;
@@ -108,6 +101,20 @@ function formatPrice(price) {
     return price >= 1
         ? `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : `$${price.toFixed(8)}`;
+}
+
+function formatVolume(volume) {
+    if (!volume) return 'N/A';
+    if (volume >= 1e9) return `$${(volume / 1e9).toFixed(2)}B`;
+    if (volume >= 1e6) return `$${(volume / 1e6).toFixed(2)}M`;
+    return `$${volume.toLocaleString()}`;
+}
+
+function formatSupply(supply) {
+    if (!supply) return 'N/A';
+    if (supply >= 1e9) return `${(supply / 1e9).toFixed(2)}B`;
+    if (supply >= 1e6) return `${(supply / 1e6).toFixed(2)}M`;
+    return `${supply.toLocaleString()}`;
 }
 
 // Update price for selected crypto
@@ -140,11 +147,11 @@ async function updatePrice() {
 // Initialize dropdown functionality
 function initializeDropdown() {
     // Toggle dropdown on selector click
-    cryptoSelector.addEventListener('click', async (e) => {
+    cryptoGrid.addEventListener('click', async (e) => {
         e.stopPropagation();
-        cryptoOptions.classList.toggle('hidden');
+        cryptoGrid.classList.toggle('hidden');
         
-        if (!cryptoOptions.classList.contains('hidden')) {
+        if (!cryptoGrid.classList.contains('hidden')) {
             cryptoSearch.focus();
             // Fetch data if we haven't already
             if (coinCache.data.length === 0) {
@@ -161,13 +168,13 @@ function initializeDropdown() {
 
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
-        if (!cryptoOptions.contains(e.target) && e.target !== cryptoSelector) {
-            cryptoOptions.classList.add('hidden');
+        if (!cryptoGrid.contains(e.target) && e.target !== cryptoGrid) {
+            cryptoGrid.classList.add('hidden');
         }
     });
 
     // Handle crypto selection
-    cryptoList.addEventListener('click', (e) => {
+    cryptoGrid.addEventListener('click', (e) => {
         const option = e.target.closest('.crypto-option');
         if (option) {
             const selectedId = option.dataset.value;
@@ -178,7 +185,7 @@ function initializeDropdown() {
                 selectedCryptoIcon.src = selectedCoin.image;
                 selectedCryptoIcon.classList.remove('hidden');
                 selectedCryptoId = selectedId;
-                cryptoOptions.classList.add('hidden');
+                cryptoGrid.classList.add('hidden');
                 updatePrice();
             }
         }
@@ -289,3 +296,50 @@ function formatCoinAmount(amount) {
 
 // Update price every 30 seconds
 setInterval(updatePrice, 30000);
+
+// Add these new helper functions
+
+function getRarityBadge(rank) {
+    const rarityConfig = {
+        legendary: { max: 10, color: 'from-yellow-400 to-orange-500' },
+        epic: { max: 50, color: 'from-purple-600 to-indigo-600' },
+        rare: { max: 100, color: 'from-blue-400 to-cyan-400' },
+        uncommon: { max: 250, color: 'from-green-400 to-emerald-500' },
+        common: { max: Infinity, color: 'from-gray-400 to-gray-500' }
+    };
+
+    const rarity = Object.entries(rarityConfig).find(([_, config]) => rank <= config.max);
+    
+    return `
+        <div class="px-3 py-1 rounded-full bg-gradient-to-r ${rarity[1].color} 
+                    text-white text-xs font-bold uppercase tracking-wider">
+            ${rarity[0]}
+        </div>
+    `;
+}
+
+function getAchievementBadges(coin) {
+    const achievements = [];
+    
+    // Market Cap Achievements
+    if (coin.market_cap >= 1e11) achievements.push({
+        name: 'Titan',
+        description: '$100B+ Market Cap',
+        color: 'bg-yellow-500'
+    });
+    
+    // Price Achievements
+    if (coin.current_price >= 10000) achievements.push({
+        name: 'Whale',
+        description: '$10k+ Price',
+        color: 'bg-blue-500'
+    });
+    
+    // Age Achievements
+    const ageInYears = (new Date() - new Date(coin.genesis_date)) / (1000 * 60 * 60 * 24 * 365);
+    if (ageInYears >= 10) achievements.push({
+        name: 'Elder',
+        description: `${Math.floor(ageInYears)} years old`,
+        color: 'bg-green-500'
+    });
+}
