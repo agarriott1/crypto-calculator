@@ -36,6 +36,14 @@ const priceInputs = document.getElementById('price-inputs');
 // Add this variable to track the currently selected crypto
 let selectedCryptoId = 'bitcoin'; // default to bitcoin
 
+// Add these variables at the top with your other DOM elements
+const cryptoSelector = document.getElementById('crypto-selector');
+const cryptoOptions = document.getElementById('crypto-options');
+const cryptoSearch = document.getElementById('crypto-search');
+const cryptoList = document.getElementById('crypto-list');
+const selectedCryptoIcon = document.getElementById('selected-crypto-icon');
+const selectedCryptoText = document.getElementById('selected-crypto-text');
+
 // Event Listeners
 cryptoSelect.addEventListener('change', updatePrice);
 toggleBtns.forEach(btn => {
@@ -332,106 +340,93 @@ async function fetchCryptoData() {
 
 // Update the dropdown with filtered results
 function updateDropdown(searchTerm = '', data = coinCache.data) {
-    const { dropdownList } = window.customSelect;
     const filteredCoins = data.filter(coin => 
         coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    dropdownList.innerHTML = filteredCoins.map(coin => `
-        <div class="crypto-option" data-value="${coin.id}">
-            <img src="${coin.image}" alt="${coin.symbol}" class="crypto-icon">
-            <div class="crypto-info">
-                <div class="crypto-name">
-                    ${coin.name} (${coin.symbol.toUpperCase()})
-                </div>
-                <div class="crypto-details">
+    cryptoList.innerHTML = filteredCoins.map(coin => `
+        <div class="crypto-option cursor-pointer p-2 hover:bg-input/50 transition-all flex items-center gap-3"
+             data-value="${coin.id}">
+            <img src="${coin.image}" alt="${coin.symbol}" class="w-6 h-6 rounded-full">
+            <div class="flex-1">
+                <div class="font-medium">${coin.name} (${coin.symbol.toUpperCase()})</div>
+                <div class="text-sm text-gray-400">
                     ${coin.market_cap ? `Mkt Cap: ${formatMarketCap(coin.market_cap)} | ` : ''}
                     ${coin.price_change_percentage_24h ? `24h: ${formatPriceChange(coin.price_change_percentage_24h)}` : ''}
                 </div>
+            </div>
+            <div class="text-right text-primary font-mono">
+                ${formatPrice(coin.current_price)}
             </div>
         </div>
     `).join('');
 }
 
-// Initialize custom select
+// Update the initializeCustomSelect function
 async function initializeCustomSelect() {
-    const originalSelect = document.getElementById('crypto');
-    const container = document.createElement('div');
-    container.className = 'custom-select-container';
-    
-    const searchBox = document.createElement('input');
-    searchBox.type = 'text';
-    searchBox.placeholder = 'Loading cryptocurrencies...';
-    searchBox.className = 'crypto-search';
-    searchBox.disabled = true;
-
-    const dropdownList = document.createElement('div');
-    dropdownList.className = 'crypto-dropdown-list hidden';
-    
-    container.appendChild(searchBox);
-    container.appendChild(dropdownList);
-    originalSelect.parentNode.replaceChild(container, originalSelect);
-    
-    // Store references globally
-    window.customSelect = { container, searchBox, dropdownList };
-    
     try {
+        // Show loading state
+        selectedCryptoText.textContent = 'Loading cryptocurrencies...';
+        cryptoSelector.disabled = true;
+
         const data = await fetchCryptoData();
         
-        // Enable search box
-        searchBox.placeholder = 'Search cryptocurrencies...';
-        searchBox.disabled = false;
-        
-        // Initial dropdown update
-        updateDropdown('', data);
-        
+        // Reset loading state
+        selectedCryptoText.textContent = 'Select a cryptocurrency';
+        cryptoSelector.disabled = false;
+
         // Event Listeners
-        searchBox.addEventListener('focus', () => {
-            dropdownList.classList.remove('hidden');
-            updateDropdown(searchBox.value, data);
-        });
-        
-        searchBox.addEventListener('input', (e) => {
-            updateDropdown(e.target.value, data);
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (!container.contains(e.target)) {
-                dropdownList.classList.add('hidden');
+        // Toggle dropdown on selector click
+        cryptoSelector.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cryptoOptions.classList.toggle('hidden');
+            if (!cryptoOptions.classList.contains('hidden')) {
+                cryptoSearch.focus();
+                updateDropdown('', data);
             }
         });
-        
-        dropdownList.addEventListener('click', (e) => {
+
+        // Handle search input
+        cryptoSearch.addEventListener('input', (e) => {
+            updateDropdown(e.target.value, data);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!cryptoOptions.contains(e.target) && e.target !== cryptoSelector) {
+                cryptoOptions.classList.add('hidden');
+            }
+        });
+
+        // Handle crypto selection
+        cryptoList.addEventListener('click', (e) => {
             const option = e.target.closest('.crypto-option');
             if (option) {
                 const selectedId = option.dataset.value;
                 const selectedCoin = data.find(coin => coin.id === selectedId);
-                searchBox.value = `${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()})`;
-                dropdownList.classList.add('hidden');
-                selectedCryptoId = selectedId; // Update the selected crypto ID
-                updatePrice(); // Call updatePrice with no arguments
+                
+                // Update the selector button
+                selectedCryptoText.textContent = `${selectedCoin.name} (${selectedCoin.symbol.toUpperCase()})`;
+                selectedCryptoIcon.src = selectedCoin.image;
+                selectedCryptoIcon.classList.remove('hidden');
+                
+                // Close dropdown
+                cryptoOptions.classList.add('hidden');
+                
+                // Update selected crypto and trigger price update
+                selectedCryptoId = selectedId;
+                updatePrice();
             }
         });
-        
+
+        // Initial dropdown update
+        updateDropdown('', data);
+
     } catch (error) {
         console.error('Error initializing custom select:', error);
-        searchBox.placeholder = 'Click to view cryptocurrencies';
-        searchBox.disabled = false;
-        
-        // Add click handler to retry loading
-        searchBox.addEventListener('click', async () => {
-            if (coinCache.data.length === 0) {
-                searchBox.placeholder = 'Loading cryptocurrencies...';
-                searchBox.disabled = true;
-                try {
-                    await initializeCustomSelect();
-                } catch (error) {
-                    searchBox.placeholder = 'Error loading. Click to retry.';
-                    searchBox.disabled = false;
-                }
-            }
-        });
+        selectedCryptoText.textContent = 'Error loading cryptocurrencies';
+        cryptoSelector.disabled = false;
     }
 }
 
@@ -470,3 +465,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeCustomSelect();
     initStarryBackground();
 });
+
+// Add this helper function for price formatting
+function formatPrice(price) {
+    if (typeof price !== 'number') return '$0.00';
+    return price >= 1
+        ? `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `$${price.toFixed(8)}`;
+}
